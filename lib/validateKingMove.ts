@@ -1,4 +1,5 @@
 import { BoardState } from "@/types/chess";
+import { isValidCastling } from "./validateCastling";
 
 export function isValidKingMove(
   board: BoardState,
@@ -11,9 +12,22 @@ export function isValidKingMove(
   const rowDiff = Math.abs(fromRow - toRow);
   const colDiff = Math.abs(fromCol - toCol);
 
-  // King moves only 1 square
-  if (rowDiff > 1 || colDiff > 1) return false;
+  // Normal king move
+  if (rowDiff <= 1 && colDiff <= 1) {
+    const target = board[toRow][toCol];
+    return !target || target.color !== color;
+  }
 
-  const target = board[toRow][toCol];
-  return !target || target.color !== color;
+  // Castling
+  if (fromRow === toRow && colDiff === 2) {
+    return isValidCastling(
+      board,
+      fromRow,
+      fromCol,
+      toCol,
+      color
+    );
+  }
+
+  return false;
 }

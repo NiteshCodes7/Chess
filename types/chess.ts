@@ -11,6 +11,7 @@ export type Color = "white" | "black";
 export type Piece = {
   type: PieceType;
   color: Color;
+  hasMoved?: boolean;
 };
 
 export type Square = Piece | null;
