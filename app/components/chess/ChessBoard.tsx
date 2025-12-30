@@ -2,15 +2,10 @@
 
 import { useGameStore } from "@/store/useGameStore";
 import { PIECE_SYMBOLS } from "@/lib/pieceSymbols";
+import Image from "next/image";
 
 export default function ChessBoard() {
-  const {
-    board,
-    selected,
-    turn,
-    status,
-    handleSquareClick,
-  } = useGameStore();
+  const { board, selected, turn, status, handleSquareClick } = useGameStore();
 
   return (
     <div>
@@ -23,8 +18,7 @@ export default function ChessBoard() {
         {board.map((row, r) =>
           row.map((square, c) => {
             const isDark = (r + c) % 2 === 1;
-            const isSelected =
-              selected?.row === r && selected?.col === c;
+            const isSelected = selected?.row === r && selected?.col === c;
 
             return (
               <div
@@ -33,13 +27,26 @@ export default function ChessBoard() {
                 className={`
                   flex items-center justify-center
                   cursor-pointer w-15.75 h-15.75
-                  ${isDark ? "bg-[#759555]" : "bg-[#000000]"}
+                  ${isDark ? "bg-[rgb(105,146,62)]" : "bg-[#ffffff]"}
                   ${isSelected ? "ring-4 ring-yellow-400" : ""}
                   text-4xl select-none
                 `}
               >
-                {square &&
-                  PIECE_SYMBOLS[square.color][square.type]}
+                {square
+                  ? (() => {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      const pieceSrc = (PIECE_SYMBOLS as any)[square.color][square.type];
+
+                      return (
+                        <Image
+                          src={pieceSrc}
+                          alt={`${square.color} ${square.type}`}
+                          className="w-10 h-10 pointer-events-none select-none"
+                          draggable={false}
+                        />
+                      );
+                    })()
+                  : null}
               </div>
             );
           })
