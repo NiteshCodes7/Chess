@@ -5,7 +5,13 @@ import { PIECE_SYMBOLS } from "@/lib/pieceSymbols";
 import Image from "next/image";
 
 export default function ChessBoard() {
-  const { board, selected, turn, status, handleSquareClick } = useGameStore();
+  const { 
+    board, 
+    selected, 
+    turn, 
+    status, 
+    handleSquareClick 
+  } = useGameStore();
 
   return (
     <div>

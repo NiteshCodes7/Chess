@@ -9,6 +9,7 @@ import { isValidKnightMove } from "@/lib/validateKnightMove";
 import { isValidQueenMove } from "@/lib/validateQueenMove";
 import { isValidKingMove } from "@/lib/validateKingMove";
 import { isMoveLegal } from "@/lib/isMoveLegal";
+import { getSocket } from "@/lib/socket";
 
 type Position = { row: number; col: number };
 
@@ -23,6 +24,9 @@ type GameStore = {
   selected: Position | null;
   status: GameStatus;
 
+  gameId: string | null;
+  setGameId: (id: string) => void;
+
   handleSquareClick: (row: number, col: number) => void;
   applyRemoteMove: (move: Move) => void;
   resetGame: () => void;
@@ -33,6 +37,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
   turn: "white",
   selected: null,
   status: { state: "playing" },
+  gameId: null,
+  setGameId(gameId){
+    set({ gameId })
+  },
+  
 
   handleSquareClick(row, col) {
     const { board, selected, turn } = get();
@@ -170,10 +179,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
       status,
     });
 
+    const { gameId } = get();
+
     // 🔜 socket.emit("move", ...)
+    getSocket().emit("move", {
+      gameId: gameId,
+      from: selected,
+      to: { row, col },
+    });
   },
 
-  // 🛰️ Remote move (NO validation, NO turn checks)
+  // Remote move (NO validation, NO turn checks)
   applyRemoteMove({ from, to }) {
     const { board, turn } = get();
     const piece = board[from.row][from.col];

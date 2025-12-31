@@ -2,7 +2,7 @@
 <svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 162.25 211.2">
   <defs>
     <style>
-      .cls-1, .cls-2, .cls-3 {
+      .cls-1, .cls-2, .cls-3, .cls-4 {
         fill: #fff;
         stroke: #20201e;
         stroke-width: 3.49px;
@@ -15,12 +15,18 @@
       .cls-3 {
         stroke-linecap: square;
       }
+
+      .cls-4 {
+        stroke-linejoin: round;
+      }
     </style>
   </defs>
   <g id="Ebene_1" data-name="Ebene 1">
     <g>
       <path class="cls-1" d="m155.56,209.45c2.73,0,4.95-2.21,4.95-4.95v-11.62c0-2.73-2.21-4.94-4.95-4.94H6.69c-2.73,0-4.95,2.21-4.95,4.94v11.62c0,2.73,2.21,4.95,4.95,4.95h148.87Z"/>
+      <rect class="cls-1" x="9.74" y="169.62" width="142.77" height="18.32"/>
       <polygon class="cls-2" points="152.51 169.62 137.83 153.17 24.42 153.17 9.74 169.62 152.51 169.62"/>
+      <polygon class="cls-4" points="156.98 37.89 137.83 56.21 24.42 56.21 5.21 37.89 156.98 37.89"/>
       <rect class="cls-1" x="24.42" y="56.21" width="113.26" height="96.96"/>
       <path class="cls-3" d="m152.32,1.75h-26.42v16.99l-14.82,4.91-13.67-4.91V1.75h-32.56v16.99l-13.67,4.91-14.83-4.91V1.75H9.94c-2.61,0-4.73,2.21-4.73,4.94v31.25h151.84V6.69c0-2.73-2.12-4.94-4.73-4.94h0Z"/>
     </g>
