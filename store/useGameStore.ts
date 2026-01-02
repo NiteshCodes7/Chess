@@ -54,7 +54,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
   
 
   handleSquareClick(row, col) {
-    const { board, selected, turn } = get();
+    const { board, selected, turn, playerColor } = get();
+    if(playerColor !== turn) return;
+    
     const clickedSquare = board[row][col];
 
     // 1️⃣ No piece selected
