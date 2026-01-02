@@ -11,7 +11,17 @@ export default function ChessBoard() {
     turn, 
     status, 
     handleSquareClick 
-  } = useGameStore();
+    } = useGameStore();
+
+  const playerColor = useGameStore((s) => s.playerColor);
+
+  function getDisplayRow(row: number) {
+    return playerColor === "black" ? 7 - row : row;
+  }
+
+  function getDisplayCol(col: number) {
+    return playerColor === "black" ? 7 - col : col;
+  }
 
   return (
     <div>
@@ -21,15 +31,22 @@ export default function ChessBoard() {
       </p>
 
       <div className="grid grid-cols-8 w-126 h-126 border-4 border-black">
-        {board.map((row, r) =>
-          row.map((square, c) => {
+        {board.map((_, r) =>
+          board[r].map((_, c) => {
+            const realRow = getDisplayRow(r);
+            const realCol = getDisplayCol(c);
+            const square = board[realRow][realCol];
+
             const isDark = (r + c) % 2 === 1;
-            const isSelected = selected?.row === r && selected?.col === c;
+            const isSelected =
+              selected?.row === realRow && selected?.col === realCol;
 
             return (
               <div
                 key={`${r}-${c}`}
-                onClick={() => handleSquareClick(r, c)}
+                onClick={() =>
+                  handleSquareClick(getDisplayRow(r), getDisplayCol(c))
+                }
                 className={`
                   flex items-center justify-center
                   cursor-pointer w-15.75 h-15.75
@@ -40,7 +57,7 @@ export default function ChessBoard() {
               >
                 {square
                   ? (() => {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
                       const pieceSrc = (PIECE_SYMBOLS as any)[square.color][square.type];
 
                       return (

@@ -18,6 +18,8 @@ type Move = {
   to: Position;
 };
 
+type Color = "white" | "black" | null;
+
 type GameStore = {
   board: BoardState;
   turn: "white" | "black";
@@ -26,6 +28,10 @@ type GameStore = {
 
   gameId: string | null;
   setGameId: (id: string) => void;
+
+  playerColor: Color;
+  setPlayerColor: (color: "white" | "black") => void;
+
 
   handleSquareClick: (row: number, col: number) => void;
   applyRemoteMove: (move: Move) => void;
@@ -40,6 +46,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
   gameId: null,
   setGameId(gameId){
     set({ gameId })
+  },
+  playerColor: null,
+  setPlayerColor(color) {
+    set({ playerColor: color })
   },
   
 
