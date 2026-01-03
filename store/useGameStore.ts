@@ -22,6 +22,8 @@ type Color = "white" | "black" | null;
 
 type GameStore = {
   board: BoardState;
+  setBoard: (board: BoardState) => void;
+
   turn: "white" | "black";
   selected: Position | null;
   status: GameStatus;
@@ -40,6 +42,9 @@ type GameStore = {
 
 export const useGameStore = create<GameStore>((set, get) => ({
   board: initialBoard,
+  setBoard(board) {
+    set({ board })
+  },
   turn: "white",
   selected: null,
   status: { state: "playing" },
