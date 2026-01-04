@@ -1,3 +1,5 @@
+"use client";
+
 import { create } from "zustand";
 import { BoardState } from "@/types/chess";
 import { initialBoard } from "@/lib/initialBoard";
@@ -18,6 +20,10 @@ type Move = {
   to: Position;
 };
 
+type ReplayMove = Move & {
+  turn: "white" | "black";
+};
+
 type Color = "white" | "black" | null;
 
 type GameStore = {
@@ -27,6 +33,7 @@ type GameStore = {
   turn: "white" | "black";
   selected: Position | null;
   status: GameStatus;
+  setStatus: (status: GameStatus) => void;
 
   gameId: string | null;
   setGameId: (id: string) => void;
@@ -36,7 +43,7 @@ type GameStore = {
 
 
   handleSquareClick: (row: number, col: number) => void;
-  applyRemoteMove: (move: Move) => void;
+  applyRemoteMove: (replayMove: ReplayMove) => void;
   resetGame: () => void;
 };
 
@@ -48,6 +55,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
   turn: "white",
   selected: null,
   status: { state: "playing" },
+  setStatus(status){
+    set({ status })
+  },
   gameId: null,
   setGameId(gameId){
     set({ gameId })
@@ -187,14 +197,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
     newBoard[selected.row][selected.col] = null;
 
     const nextTurn = turn === "white" ? "black" : "white";
-    const status = getGameStatus(newBoard, nextTurn);
 
     set({
       board: newBoard,
       turn: nextTurn,
       selected: null,
-      status,
     });
+
 
     const { gameId } = get();
 
@@ -207,8 +216,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   // Remote move (NO validation, NO turn checks)
-  applyRemoteMove({ from, to }) {
-    const { board, turn } = get();
+  applyRemoteMove({ from, to, turn }) {
+    const { board } = get();
     const piece = board[from.row][from.col];
     if (!piece) return;
 

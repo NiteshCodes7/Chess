@@ -19,12 +19,14 @@ export default function PlayPage() {
       router.push(`/game/${gameId}`);
     });
 
-    socket.on("authoritative_move", ({ board, turn }) => {
+    socket.on("authoritative_move", ({ board, turn, status }) => {
       useGameStore.setState({
         board,
         turn,
         selected: null,
       });
+
+      useGameStore.getState().setStatus(status);
     });
 
     return () => {
