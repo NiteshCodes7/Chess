@@ -3,6 +3,7 @@
 import { useGameStore } from "@/store/useGameStore";
 import { PIECE_SYMBOLS } from "@/lib/pieceSymbols";
 import Image from "next/image";
+import ChessClock from "./ChessClock";
 
 export default function ChessBoard() {
   const { 
@@ -29,6 +30,8 @@ export default function ChessBoard() {
         Turn: <strong>{turn.toUpperCase()}</strong> | Status:{" "}
         <strong>{status.state}</strong>
       </p>
+
+      <ChessClock />
 
       <div className="grid grid-cols-8 w-126 h-126 border-4 border-black">
         {board.map((_, r) =>

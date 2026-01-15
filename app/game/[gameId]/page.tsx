@@ -4,6 +4,7 @@ import { use, useEffect } from "react";
 import { getSocket } from "@/lib/socket";
 import { useGameStore } from "@/store/useGameStore";
 import ChessBoard from "@/app/components/chess/ChessBoard";
+import { AuthoritativeMovePayload, StateUpdatePayload, TimeoutPayload } from "@/types/socket";
 
 export default function GamePage({
   params,
@@ -12,9 +13,7 @@ export default function GamePage({
 }) {
   const { gameId } = use(params);
 
-  const applyRemoteMove = useGameStore((s) => s.applyRemoteMove);
   const setGameId = useGameStore((s) => s.setGameId);
-  const setPlayerColor = useGameStore((s) => s.setPlayerColor);
 
   useEffect(() => {
     const socket = getSocket();
@@ -23,20 +22,41 @@ export default function GamePage({
 
     socket.emit("join_game", gameId);
 
-    socket.on("match_found", ({ color }) => {
-      setPlayerColor(color);
+    const onAuthoritativeMove = (({ board, turn, status }: AuthoritativeMovePayload) => {
+      useGameStore.setState({
+        board,
+        turn,
+        selected: null,
+      });
+
+      useGameStore.getState().setStatus(status);
     });
 
-    socket.on("opponent_move", (move) => {
-      applyRemoteMove(move);
+    const onStateUpdate = ((payload: StateUpdatePayload) => {
+      const { board, turn, time, lastTimestamp } = payload;
+      useGameStore.setState({
+        board,
+        turn,
+        serverTime: time,
+        lastTimestamp,
+      });
     });
+
+    const onTimeout = (({ winner }: TimeoutPayload) => {
+      alert(`Time out! ${winner} wins`);
+    });
+
+    socket.on("authoritative_move", onAuthoritativeMove);
+    socket.on("state_update", onStateUpdate);
+    socket.on("timeout", onTimeout);
 
     return () => {
-      socket.off("opponent_move");
-      socket.off("match_found");
+      socket.off("authoritative_move", onAuthoritativeMove);
+      socket.off("state_update", onStateUpdate);
+      socket.off("timeout", onTimeout);
       socket.disconnect();
     };
-  }, [setPlayerColor, gameId, applyRemoteMove]);
+  }, [gameId]);
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-gray-900">

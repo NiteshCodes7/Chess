@@ -41,6 +41,9 @@ type GameStore = {
   playerColor: Color;
   setPlayerColor: (color: "white" | "black") => void;
 
+  serverTime: { white: number; black: number };
+  lastTimestamp: number;
+  incrementMs: number;
 
   handleSquareClick: (row: number, col: number) => void;
   applyRemoteMove: (replayMove: ReplayMove) => void;
@@ -66,6 +69,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setPlayerColor(color) {
     set({ playerColor: color })
   },
+  serverTime: {
+    white: 0,
+    black: 0
+  },
+  incrementMs: 0,
+  lastTimestamp: Date.now(),
   
 
   handleSquareClick(row, col) {

@@ -14,23 +14,23 @@ export default function PlayPage() {
 
     socket.emit("find_match");
 
-    socket.on("match_found", ({ gameId, color }) => {
-      useGameStore.getState().setPlayerColor(color);
+    socket.on("match_found", ({ gameId, color, timeMs, incrementMs, lastTimestamp }) => {
+      useGameStore.setState(() => ({
+        playerColor: color,
+        serverTime: {
+          white: timeMs,
+          black: timeMs,
+        },
+        lastTimestamp,
+        incrementMs,
+      }));
+
       router.push(`/game/${gameId}`);
-    });
-
-    socket.on("authoritative_move", ({ board, turn, status }) => {
-      useGameStore.setState({
-        board,
-        turn,
-        selected: null,
-      });
-
-      useGameStore.getState().setStatus(status);
     });
 
     return () => {
       socket.off("match_found");
+      socket.disconnect();
     };
   }, [router]);
 
