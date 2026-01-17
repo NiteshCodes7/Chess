@@ -9,26 +9,27 @@ export default function PlayPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const socket = getSocket();
-    socket.connect();
+        const socket = getSocket();
+        socket.connect();
 
-    socket.emit("find_match");
+        socket.emit("find_match");
 
-    socket.on("match_found", ({ gameId, color, timeMs, incrementMs, lastTimestamp }) => {
-      useGameStore.setState(() => ({
-        playerColor: color,
-        serverTime: {
-          white: timeMs,
-          black: timeMs,
-        },
-        lastTimestamp,
-        incrementMs,
-      }));
+        socket.on("match_found", ({ gameId, color, timeMs, incrementMs, lastTimestamp }) => {
+          useGameStore.setState(() => ({
+            playerColor: color,
+            serverTime: {
+              white: timeMs,
+              black: timeMs,
+            },
+            lastTimestamp,
+            incrementMs,
+          }));
 
-      router.push(`/game/${gameId}`);
-    });
+          router.push(`/game/${gameId}`);
+        });
 
     return () => {
+      const socket = getSocket();
       socket.off("match_found");
       socket.disconnect();
     };

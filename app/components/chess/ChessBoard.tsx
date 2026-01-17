@@ -5,7 +5,7 @@ import { PIECE_SYMBOLS } from "@/lib/pieceSymbols";
 import Image from "next/image";
 import ChessClock from "./ChessClock";
 
-export default function ChessBoard() {
+export default function ChessBoard({ spectator = false}) {
   const { 
     board, 
     selected, 
@@ -47,12 +47,13 @@ export default function ChessBoard() {
             return (
               <div
                 key={`${r}-${c}`}
-                onClick={() =>
-                  handleSquareClick(getDisplayRow(r), getDisplayCol(c))
+                onClick={() => {
+                  if(!spectator) handleSquareClick(getDisplayRow(r), getDisplayCol(c))
+                }
                 }
                 className={`
                   flex items-center justify-center
-                  cursor-pointer w-15.75 h-15.75
+                  ${spectator ? "cursor-default" : "cursor-pointer"} w-15.75 h-15.75
                   ${isDark ? "bg-[rgb(105,146,62)]" : "bg-[#ffffff]"}
                   ${isSelected ? "ring-4 ring-yellow-400" : ""}
                   text-4xl select-none

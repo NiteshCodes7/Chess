@@ -25,6 +25,14 @@ export type StateUpdatePayload = {
   lastTimestamp: number;
 };
 
+export type ReconnectionState = {
+  board: BoardState;
+  turn: "white" | "black";
+  color: "white" | "black";
+  time: { white: number; black: number };
+  lastTimestamp: number;
+};
+
 export type TimeoutPayload = {
   winner: "white" | "black";
 };
