@@ -39,6 +39,7 @@ export default function SpectatePage({
     });
 
     return () => {
+      socket.off("state_update");
       socket.disconnect();
     };
   }, [gameId]);

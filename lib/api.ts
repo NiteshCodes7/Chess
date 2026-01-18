@@ -26,6 +26,7 @@ api.interceptors.response.use(
     const originalRequest = err.config;
      if (originalRequest.url?.includes("/auth/refresh")) {
       setAccessToken(null);
+      localStorage.setItem("wsToken", "");
       return;
     }
 
@@ -34,6 +35,7 @@ api.interceptors.response.use(
       try {
         const { data } = await api.post("/auth/refresh");
         setAccessToken(data.accessToken);
+        localStorage.setItem("wsToken", data.wsToken);
         return api(err.config);
       } catch {
         setAccessToken(null);

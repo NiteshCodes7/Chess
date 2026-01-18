@@ -4,7 +4,13 @@ import { use, useEffect } from "react";
 import { getSocket } from "@/lib/socket";
 import { useGameStore } from "@/store/useGameStore";
 import ChessBoard from "@/app/components/chess/ChessBoard";
-import { AuthoritativeMovePayload, ReconnectionState, StateUpdatePayload, TimeoutPayload } from "@/types/socket";
+import {
+  AuthoritativeMovePayload,
+  ReconnectionState,
+  StateUpdatePayload,
+  TimeoutPayload,
+} from "@/types/socket";
+import { api, setAccessToken } from "@/lib/api";
 
 export default function GamePage({
   params,
@@ -23,7 +29,11 @@ export default function GamePage({
 
     socket.emit("join_game", gameId);
 
-    const onAuthoritativeMove = (({ board, turn, status }: AuthoritativeMovePayload) => {
+    const onAuthoritativeMove = ({
+      board,
+      turn,
+      status,
+    }: AuthoritativeMovePayload) => {
       useGameStore.setState({
         board,
         turn,
@@ -31,12 +41,18 @@ export default function GamePage({
       });
 
       useGameStore.getState().setStatus(status);
-    });
+    };
 
     // reconnect
     socket.emit("reconnect");
 
-    const onReconnection = (({ board, turn, color, time, lastTimestamp }: ReconnectionState) => {
+    const onReconnection = ({
+      board,
+      turn,
+      color,
+      time,
+      lastTimestamp,
+    }: ReconnectionState) => {
       useGameStore.setState({
         board,
         turn,
@@ -44,32 +60,32 @@ export default function GamePage({
         serverTime: time,
         lastTimestamp,
       });
-    });
+    };
 
-    const onStateUpdate = ((payload: StateUpdatePayload) => {
-      const { board, turn, time, lastTimestamp } = payload;
-      useGameStore.setState({
-        board,
-        turn,
-        serverTime: time,
-        lastTimestamp,
-      });
-    });
-
-    const onTimeout = (({ winner }: TimeoutPayload) => {
+    const onTimeout = ({ winner }: TimeoutPayload) => {
       alert(`Time out! ${winner} wins`);
+    };
+
+    //auto refreshing wsToken
+    socket.on("ws_unauthorized", async () => {
+      console.log("WS token expired, refreshing...");
+      const { data } = await api.post("/auth/refresh");
+      setAccessToken(data.accessToken)
+      localStorage.setItem("wsToken", data.wsToken);
+      
+      socket.auth = { wsToken: localStorage.getItem("wsToken") };
+      socket.connect();
     });
 
     socket.on("authoritative_move", onAuthoritativeMove);
     socket.on("reconnected", onReconnection);
-    socket.on("state_update", onStateUpdate);
     socket.on("timeout", onTimeout);
 
     return () => {
       socket.off("authoritative_move", onAuthoritativeMove);
       socket.off("reconnected", onReconnection);
-      socket.off("state_update", onStateUpdate);
       socket.off("timeout", onTimeout);
+      socket.off("ws_unauthorized");
       socket.disconnect();
     };
   }, [gameId]);
@@ -98,7 +114,6 @@ export default function GamePage({
       socket.off("reconnected");
     };
   }, []);
-
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-gray-900">

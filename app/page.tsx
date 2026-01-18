@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { api, setAccessToken, getAccessToken } from "@/lib/api";
+import { api, setAccessToken } from "@/lib/api";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -14,6 +14,7 @@ export default function LandingPage() {
       try {
         const { data } = await api.post("/auth/refresh");
         setAccessToken(data.accessToken);
+        localStorage.setItem("wsToken", data.wsToken);
         setAuthed(true);
       } catch {
         setAuthed(false);

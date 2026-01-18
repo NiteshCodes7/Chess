@@ -1,5 +1,4 @@
 import { io, Socket } from "socket.io-client";
-import { getAccessToken } from "./api";
 
 let socket: Socket | null = null;
 
@@ -8,7 +7,7 @@ export function getSocket() {
     socket = io("http://localhost:3001", {
       transports: ["websocket"],
       autoConnect: false,
-      auth: { token : getAccessToken()},
+      auth: { wsToken: localStorage.getItem("wsToken") },
     });
   }
   return socket;
