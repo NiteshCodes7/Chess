@@ -23,6 +23,7 @@ export type StateUpdatePayload = {
   turn: "white" | "black";
   time: { white: number; black: number };
   lastTimestamp: number;
+  color?: "white" | "black";
 };
 
 export type ReconnectionState = {

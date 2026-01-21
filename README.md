@@ -1,36 +1,118 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+```md
+# ♟️ Chess Multiplayer Frontend
 
-## Getting Started
+A production-ready real-time chess frontend built with **Next.js**, **Zustand**, and **Socket.IO**, supporting full chess rules, matchmaking, user accounts, clocks, spectators, reconnection, and server-authoritative gameplay.
 
-First, run the development server:
+---
 
+## 🚀 Features (Completed)
+
+### 🎮 Chess Mechanics
+- Full chess piece movement logic
+- Legal move validation
+- King safety enforcement (cannot move into check)
+- Check, Checkmate & Stalemate detection
+- Castling (legal, no-through-check, no-exposing-king)
+- Server-authoritative move enforcement
+- Board orientation for white/black
+- Piece selection & move UI
+
+### 🌐 Multiplayer System
+- Socket.IO real-time game sync
+- Server-authoritative move updates
+- No client-side cheating
+- Automatic board updates for opponent
+- Spectator mode (watch live games)
+- Reconnection support (state recovery after refresh)
+- Move replay from history (client-side deterministic)
+
+### 🔍 Matchmaking
+- Rating-based matchmaking (±100 Elo tolerance)
+- Single timeout support (clean queue exit)
+- Cancel matchmaking button
+- Player-color assignment (white/black)
+- Dynamic routing to `/game/[gameId]`
+
+### ⏱ Clocks / Time Controls
+- Server-owned chess clocks
+- Client visual tick rendering
+- Time increments per move supported
+- Timeout → automatic win for opponent
+- Refresh-safe clock state
+
+### 👤 User System (Frontend Integration)
+- OAuth & email login support ready
+- JWT-based auth
+- Access token used in socket authentication
+- Profiles can display:
+  - Name
+  - Avatar
+  - Rating
+  - Match history
+
+---
+
+## 🧱 Tech Stack
+
+- **Next.js (App Router)**
+- **React 18**
+- **Zustand** — Global game state
+- **Socket.IO Client** — Real-time transport
+- **Tailwind CSS** — UI styling
+- **TypeScript**
+
+---
+
+## 🗂 Project Structure (Key Files)
+
+src/
+app/
+play/ # matchmaking UI
+game/[gameId]/ # active game page
+spectate/[gameId]/ # spectator mode
+components/
+chess/ChessBoard.tsx # board UI only
+store/
+useGameStore.ts # client state + reconciliation
+lib/
+socket.ts # socket singleton
+chess/ # (optional helpers)
+
+
+---
+
+## 🔌 WebSocket Messaging
+
+### Client → Server
+- `find_match`
+- `cancel_matchmaking`
+- `move` (move intent)
+- `spectate`
+- `reconnect`
+
+### Server → Client
+- `match_found`
+- `match_cancelled`
+- `match_timeout`
+- `authoritative_move`
+- `state_update`
+- `timeout`
+- `reconnected`
+
+---
+
+## ▶️ Running Locally
+
+### Install Dependencies
+```bash
+npm install
+
+### Start Development Server
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Env Variables
+Create a `.env.local` file with the following variables:
+```
+NEXT_PUBLIC_BACKEND_URL=http://localhost:3001

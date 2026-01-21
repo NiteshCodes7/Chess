@@ -96,9 +96,9 @@ export default function GamePage({
 
     socket.emit("reconnect");
 
-    socket.on("reconnected", ({ color }, payload: StateUpdatePayload) => {
-      const { board, turn, time, lastTimestamp } = payload;
-      setPlayerColor(color);
+    socket.on("reconnected", (payload: StateUpdatePayload) => {
+      const { color, board, turn, time, lastTimestamp } = payload;
+      setPlayerColor(color!);
       useGameStore.setState({
         board,
         turn,
