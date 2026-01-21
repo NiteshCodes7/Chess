@@ -11,7 +11,7 @@ export default function ChessBoard({ spectator = false}) {
     selected, 
     turn, 
     status, 
-    handleSquareClick 
+    handleSquareClick,
     } = useGameStore();
 
   const playerColor = useGameStore((s) => s.playerColor);

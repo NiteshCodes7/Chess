@@ -22,7 +22,7 @@ export default function SpectatePage({
     socket.emit("spectate", gameId);
 
     socket.on("state_update", (payload: StateUpdatePayload) => {
-      const { board, turn, time, lastTimestamp } = payload;
+      const { board, turn, time, lastTimestamp, promotionPending } = payload;
       useGameStore.setState({
         board,
         turn,
@@ -31,6 +31,7 @@ export default function SpectatePage({
           black: time.black,
         },
         lastTimestamp,
+        promotionPending,
       });
     });
 

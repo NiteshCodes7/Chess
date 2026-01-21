@@ -6,7 +6,8 @@ export type GameStatus =
   | { state: "playing" }
   | { state: "check"; color: "white" | "black" }
   | { state: "checkmate"; winner: "white" | "black" }
-  | { state: "stalemate" };
+  | { state: "stalemate" }
+  | { state: "promotion" };
 
 export function getGameStatus(
   board: BoardState,

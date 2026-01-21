@@ -48,6 +48,13 @@ type GameStore = {
   handleSquareClick: (row: number, col: number) => void;
   applyRemoteMove: (replayMove: ReplayMove) => void;
   resetGame: () => void;
+
+  promotionPending: null | 
+    {
+    position: { row: number; col: number },
+    color: "white" | "black"
+    }
+
 };
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -75,6 +82,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
   incrementMs: 0,
   lastTimestamp: Date.now(),
+  promotionPending: null,
   
 
   handleSquareClick(row, col) {
