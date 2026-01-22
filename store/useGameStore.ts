@@ -49,52 +49,117 @@ type GameStore = {
   applyRemoteMove: (replayMove: ReplayMove) => void;
   resetGame: () => void;
 
-  promotionPending: null | 
-    {
-    position: { row: number; col: number },
-    color: "white" | "black"
-    }
+  promotionPending: null | {
+    position: { row: number; col: number };
+    color: "white" | "black";
+  };
 
+  legalMoves: { row: number; col: number }[];
+  setLegalMoves: (moves: { row: number; col: number }[]) => void;
+  clearLegalMoves: () => void;
 };
+
+function computeLegalMoves(
+  board: BoardState,
+  selected: { row: number; col: number },
+  color: "white" | "black"
+) {
+  const moves: { row: number; col: number }[] = [];
+  const piece = board[selected.row][selected.col];
+  if(!piece) return moves;
+
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      if (r === selected.row && c === selected.col) continue;
+
+      let valid = false;
+      switch (piece.type) {
+        case "pawn":
+          valid = isValidPawnMove(board, selected, { row: r, col: c }, color);
+          break;
+        case "rook":
+          valid = isValidRookMove(board, selected.row, selected.col, r, c, color);
+          break;
+        case "bishop":
+          valid = isValidBishopMove(board, selected.row, selected.col, r, c, color);
+          break;
+        case "knight":
+          valid = isValidKnightMove(board, selected.row, selected.col, r, c, color);
+          break;
+        case "queen":
+          valid = isValidQueenMove(board, selected.row, selected.col, r, c, color);
+          break;
+        case "king":
+          valid = isValidKingMove(board, selected.row, selected.col, r, c, color);
+          break;
+      }
+
+      if (!valid) continue;
+
+      if (isMoveLegal(board, selected.row, selected.col, r, c, color)) {
+        moves.push({ row: r, col: c });
+      }
+    }
+  }
+
+  return moves;
+}
 
 export const useGameStore = create<GameStore>((set, get) => ({
   board: initialBoard,
   setBoard(board) {
-    set({ board })
+    set({ board });
   },
   turn: "white",
   selected: null,
   status: { state: "playing" },
-  setStatus(status){
-    set({ status })
+  setStatus(status) {
+    set({ status });
   },
   gameId: null,
-  setGameId(gameId){
-    set({ gameId })
+  setGameId(gameId) {
+    set({ gameId });
   },
   playerColor: null,
   setPlayerColor(color) {
-    set({ playerColor: color })
+    set({ playerColor: color });
   },
   serverTime: {
     white: 0,
-    black: 0
+    black: 0,
   },
   incrementMs: 0,
   lastTimestamp: Date.now(),
   promotionPending: null,
-  
+
+  legalMoves: [],
+  setLegalMoves(moves) {
+    set({ legalMoves: moves });
+  },
+  clearLegalMoves() {
+    set({ legalMoves: [] });
+  },
 
   handleSquareClick(row, col) {
     const { board, selected, turn, playerColor } = get();
-    if(playerColor !== turn) return;
-    
+    if (playerColor !== turn) {
+      get().clearLegalMoves();
+      return;
+    }
+
     const clickedSquare = board[row][col];
 
     // 1️⃣ No piece selected
     if (!selected) {
       if (clickedSquare && clickedSquare.color === turn) {
         set({ selected: { row, col } });
+
+        const moves = computeLegalMoves(
+          board,
+          { row, col },
+          clickedSquare.color,
+        );
+        get().setLegalMoves(moves);
       }
       return;
     }
@@ -104,12 +169,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
     // 2️⃣ Same square → deselect
     if (selected.row === row && selected.col === col) {
       set({ selected: null });
+      get().clearLegalMoves();
       return;
     }
 
     // 3️⃣ Click another own piece → reselect
     if (clickedSquare && clickedSquare.color === turn) {
       set({ selected: { row, col } });
+
+      const moves = computeLegalMoves(board, { row, col }, clickedSquare.color);
+      get().setLegalMoves(moves);
       return;
     }
 
@@ -124,7 +193,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           board,
           selected,
           { row, col },
-          selectedPiece.color
+          selectedPiece.color,
         );
         break;
       case "rook":
@@ -134,7 +203,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           selected.col,
           row,
           col,
-          selectedPiece.color
+          selectedPiece.color,
         );
         break;
       case "bishop":
@@ -144,7 +213,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           selected.col,
           row,
           col,
-          selectedPiece.color
+          selectedPiece.color,
         );
         break;
       case "knight":
@@ -154,7 +223,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           selected.col,
           row,
           col,
-          selectedPiece.color
+          selectedPiece.color,
         );
         break;
       case "queen":
@@ -164,7 +233,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           selected.col,
           row,
           col,
-          selectedPiece.color
+          selectedPiece.color,
         );
         break;
       case "king":
@@ -174,7 +243,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           selected.col,
           row,
           col,
-          selectedPiece.color
+          selectedPiece.color,
         );
         break;
     }
@@ -188,7 +257,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         selected.col,
         row,
         col,
-        selectedPiece.color
+        selectedPiece.color,
       )
     )
       return;
@@ -219,8 +288,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       board: newBoard,
       turn: nextTurn,
       selected: null,
+      legalMoves: [],
     });
-
 
     const { gameId } = get();
 

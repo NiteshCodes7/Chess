@@ -15,6 +15,7 @@ export default function ChessBoard({ spectator = false}) {
     } = useGameStore();
 
   const playerColor = useGameStore((s) => s.playerColor);
+  const legalMoves = useGameStore((s) => s.legalMoves);
 
   function getDisplayRow(row: number) {
     return playerColor === "black" ? 7 - row : row;
@@ -43,6 +44,13 @@ export default function ChessBoard({ spectator = false}) {
             const isDark = (r + c) % 2 === 1;
             const isSelected =
               selected?.row === realRow && selected?.col === realCol;
+            
+            const legalMove = legalMoves.some(m => m.row === realRow && m.col === realCol);
+            const captured =
+              legalMove &&
+              square !== null &&
+              selected !== null &&
+              board[selected.row][selected.col]?.color !== square.color;
 
             return (
               <div
@@ -56,6 +64,8 @@ export default function ChessBoard({ spectator = false}) {
                   ${spectator ? "cursor-default" : "cursor-pointer"} w-15.75 h-15.75
                   ${isDark ? "bg-[rgb(105,146,62)]" : "bg-[#ffffff]"}
                   ${isSelected ? "ring-4 ring-yellow-400" : ""}
+                  ${legalMove ? "bg-blue-400/50 border-2 border-black" : `${isDark ? "bg-[rgb(105,146,62)]" : "bg-[#ffffff]"}`}
+                  ${captured ? "bg-red-500 border-2 border-black" : ""}
                   text-4xl select-none
                 `}
               >
