@@ -1,29 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { api, setAccessToken } from "@/lib/api";
+import { useAuth } from "../context/AuthProvider";
 
 export default function LandingPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [authed, setAuthed] = useState(false);
-
-  useEffect(() => {
-    async function init() {
-      try {
-        const { data } = await api.post("/auth/refresh");
-        setAccessToken(data.accessToken);
-        localStorage.setItem("wsToken", data.wsToken);
-        setAuthed(true);
-      } catch {
-        setAuthed(false);
-      } finally {
-        setLoading(false);
-      }
-    }
-    init();
-  }, []);
+  const { loading, authed } = useAuth();
 
   if (loading) {
     return (
@@ -47,16 +29,14 @@ export default function LandingPage() {
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
 
-          {authed && (
+          {authed ? (
             <button
               onClick={() => router.push("/play")}
               className="bg-blue-600 hover:bg-blue-500 px-6 py-3 rounded text-lg font-medium"
             >
               Play Now
             </button>
-          )}
-
-          {!authed && (
+          ) : (
             <>
               <button
                 onClick={() => router.push("/auth/login")}

@@ -5,13 +5,13 @@ import { PIECE_SYMBOLS } from "@/lib/pieceSymbols";
 import Image from "next/image";
 import ChessClock from "./ChessClock";
 
-export default function ChessBoard({ spectator = false}) {
-  const { 
-    board, 
-    selected, 
-    turn, 
-    status, 
-    handleSquareClick,
+export default function ChessBoard({ spectator = false }) {
+  const {
+     board,
+     selected, 
+     turn, 
+     status, 
+     handleSquareClick 
     } = useGameStore();
 
   const playerColor = useGameStore((s) => s.playerColor);
@@ -44,8 +44,41 @@ export default function ChessBoard({ spectator = false}) {
             const isDark = (r + c) % 2 === 1;
             const isSelected =
               selected?.row === realRow && selected?.col === realCol;
-            
-            const legalMove = legalMoves.some(m => m.row === realRow && m.col === realCol);
+
+            const legalMove = legalMoves.some(
+              (m) => m.row === realRow && m.col === realCol,
+            );
+
+            let castlingMove = false;
+            if (
+              selected !== null &&
+              board[selected.row][selected.col]?.type === "king"
+            ) {
+              if (selected.row === 0 || selected.row === 7) {
+                castlingMove = legalMoves.some(
+                  (m) =>
+                    m.row === realRow &&
+                    m.col === realCol &&
+                    (m.col === 6 || m.col === 2),
+                );
+              }
+            }
+
+            let pawnPromotion = false;
+            if (
+              selected &&
+              board[selected.row][selected.col]?.type === "pawn"
+            ) {
+              const color = board[selected.row][selected.col]?.color;
+              pawnPromotion = legalMoves.some(
+                (m) =>
+                  m.row === realRow &&
+                  m.col === realCol &&
+                  ((color === "white" && m.row === 0) ||
+                    (color === "black" && m.row === 7)),
+              );
+            }
+
             const captured =
               legalMove &&
               square !== null &&
@@ -56,15 +89,17 @@ export default function ChessBoard({ spectator = false}) {
               <div
                 key={`${r}-${c}`}
                 onClick={() => {
-                  if(!spectator) handleSquareClick(getDisplayRow(r), getDisplayCol(c))
-                }
-                }
+                  if (!spectator)
+                    handleSquareClick(getDisplayRow(r), getDisplayCol(c));
+                }}
                 className={`
                   flex items-center justify-center
                   ${spectator ? "cursor-default" : "cursor-pointer"} w-15.75 h-15.75
                   ${isDark ? "bg-[rgb(105,146,62)]" : "bg-[#ffffff]"}
                   ${isSelected ? "ring-4 ring-yellow-400" : ""}
-                  ${legalMove ? "bg-blue-400/50 border-2 border-black" : `${isDark ? "bg-[rgb(105,146,62)]" : "bg-[#ffffff]"}`}
+                  ${pawnPromotion ? "bg-amber-600 border-2 border-black" : ""}
+                  ${castlingMove ? "bg-purple-400/50 border-2 border-black" : ""}
+                  ${legalMove ? "bg-blue-400/50 border-2 border-black" : ""}
                   ${captured ? "bg-red-500 border-2 border-black" : ""}
                   text-4xl select-none
                 `}
@@ -86,7 +121,7 @@ export default function ChessBoard({ spectator = false}) {
                   : null}
               </div>
             );
-          })
+          }),
         )}
       </div>
     </div>

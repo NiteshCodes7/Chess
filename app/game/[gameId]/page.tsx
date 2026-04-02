@@ -12,6 +12,7 @@ import {
 } from "@/types/socket";
 import { api, setAccessToken } from "@/lib/api";
 import { PromotionDialog } from "@/app/components/chess/PromotionDialog";
+import ChatWindow from "@/app/components/chat/ChatWindow";
 
 export default function GamePage({
   params,
@@ -166,11 +167,25 @@ export default function GamePage({
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gray-900">
-      <ChessBoard />
+    <main className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
+      <div className="flex flex-col lg:flex-row gap-6 bg-gray-800 p-6 rounded-2xl shadow-2xl">
+        {/* Chess Board Section */}
+        <div className="bg-gray-700 p-4 rounded-xl shadow-inner">
+          <ChessBoard />
+        </div>
+
+        {/* Chat Window Section */}
+        <div className="w-full lg:w-80 bg-gray-700 rounded-xl shadow-inner flex flex-col">
+          <ChatWindow gameId={gameId} />
+        </div>
+      </div>
+
+      {/* Promotion Modal */}
       {promotionPending && promotionPending.color === playerColor && (
-        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
-          <PromotionDialog onSelect={handlePromotionSelect} />
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center z-50">
+          <div className="bg-gray-800 p-6 rounded-xl shadow-xl">
+            <PromotionDialog onSelect={handlePromotionSelect} />
+          </div>
         </div>
       )}
     </main>
