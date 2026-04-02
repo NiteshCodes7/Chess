@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, KeyboardEvent } from "react";
-import { getSocket } from "@/lib/socket";
+import { getChatSocket } from "@/lib/chatSocket";
+import { getSocket } from "@/lib/socket"; // 👈 your game socket
 
 type ChatInputProps = {
   to?: string;
@@ -10,34 +11,50 @@ type ChatInputProps = {
 
 export default function ChatInput({ to, gameId }: ChatInputProps) {
   const [text, setText] = useState("");
-  const socket = getSocket();
+
+  const chatSocket = getChatSocket();
+  const gameSocket = getSocket(); // 👈 IMPORTANT
 
   const sendMessage = () => {
     const trimmed = text.trim();
 
-    // ❌ prevent empty messages
     if (!trimmed) return;
 
-    // ❌ prevent sending without target
     if (!to && !gameId) {
       console.warn("No target provided");
       return;
     }
 
-    // ✅ DM has priority
+    // 🔥 DM → chat socket
     if (to) {
-      socket.emit("dm", {
+      if (!chatSocket.connected) {
+        console.warn("Chat socket not connected");
+        return;
+      }
+
+      console.log("📤 DM:", trimmed);
+
+      chatSocket.emit("dm", {
         to,
         content: trimmed,
       });
-    } else {
-      socket.emit("game_chat", {
+    }
+
+    // 🔥 GAME CHAT → game socket
+    else if (gameId) {
+      if (!gameSocket.connected) {
+        console.warn("Game socket not connected");
+        return;
+      }
+
+      console.log("🎮 Game Chat:", trimmed);
+
+      gameSocket.emit("game_chat", {
         gameId,
         content: trimmed,
       });
     }
 
-    // ✅ clear input ONLY (no optimistic UI update here)
     setText("");
   };
 

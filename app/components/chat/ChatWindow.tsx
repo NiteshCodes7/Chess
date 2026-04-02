@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { getSocket } from "@/lib/socket";
+import { getChatSocket, connectChatSocket } from "@/lib/chatSocket";
 import MessageItem from "./MessageItem";
 import ChatInput from "./ChatInput";
 import { getUserId } from "@/lib/getUser";
 import { api } from "@/lib/api";
-
-/* -------- TYPES -------- */
+import { getSocket } from "@/lib/socket";
 
 type Friend = {
   id: string;
@@ -41,13 +40,11 @@ export default function ChatWindow({
 }: ChatWindowProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const bottomRef = useRef<HTMLDivElement | null>(null);
-  const socket = getSocket();
+  const socket = getChatSocket();
 
-  /* 🔥 RESET WHEN SWITCHING CHAT */
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setMessages([]);
-  }, [selectedFriend]);
+    connectChatSocket();
+  }, []);
 
   /* ---------------- DM CHAT ---------------- */
 
@@ -56,7 +53,7 @@ export default function ChatWindow({
 
     const currentUserId = getUserId();
 
-    // ✅ fetch history
+    // fetch history
     (async () => {
       try {
         const res = await api.get(`/chat/${selectedFriend.id}`);
@@ -75,13 +72,11 @@ export default function ChatWindow({
       }
     })();
 
-    // ✅ FIXED DM HANDLER
+    // ✅ receive messages
     const handleDM = (msg: Message) => {
       const isThisChat =
-        (msg.from === currentUserId &&
-          msg.to === selectedFriend.id) ||
-        (msg.from === selectedFriend.id &&
-          msg.to === currentUserId);
+        (msg.from === currentUserId && msg.to === selectedFriend.id) ||
+        (msg.from === selectedFriend.id && msg.to === currentUserId);
 
       if (!isThisChat) return;
 
@@ -101,7 +96,30 @@ export default function ChatWindow({
     };
   }, [selectedFriend, gameId, socket]);
 
-  /* ---------------- AUTO SCROLL ---------------- */
+  /* ---------------- GAME CHAT ---------------- */
+
+  useEffect(() => {
+    if (!gameId) return;
+
+    const socket = getSocket();
+
+    const handleGameChat = (msg: { from: string; content: string }) => {
+      setMessages((prev) => [
+        ...prev,
+        {
+          from: msg.from,
+          content: msg.content,
+          isMe: msg.from === getUserId(),
+        },
+      ]);
+    };
+
+    socket.on("game_chat", handleGameChat);
+
+    return () => {
+      socket.off("game_chat", handleGameChat);
+    };
+  }, [gameId]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -131,7 +149,7 @@ export default function ChatWindow({
       </div>
 
       {/* Input */}
-      <ChatInput to={selectedFriend?.id} />
+      <ChatInput gameId={gameId} to={selectedFriend?.id} />
     </div>
   );
 }
