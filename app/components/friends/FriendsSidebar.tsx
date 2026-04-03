@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { getSocket } from "@/lib/socket";
-import FriendItem from "./FriendItem";
-import { api } from "@/lib/api";
+import { useEffect, useRef, useState } from 'react';
+import { getSocket } from '@/lib/socket';
+import FriendItem from './FriendItem';
+import { api } from '@/lib/api';
 
 type Friend = {
   id: string;
   name: string;
   avatar?: string;
   rating?: number;
-  status?: "online" | "playing" | "offline";
+  status?: 'online' | 'playing' | 'offline';
 };
 
 type FriendsSidebarProps = {
@@ -19,7 +19,7 @@ type FriendsSidebarProps = {
 
 type PresenceUpdate = {
   userId: string;
-  status: "online" | "playing" | "offline";
+  status: 'online' | 'playing' | 'offline';
 };
 
 type GroupedFriends = {
@@ -30,42 +30,67 @@ type GroupedFriends = {
 
 export default function FriendsSidebar({ onSelect }: FriendsSidebarProps) {
   const [friends, setFriends] = useState<Friend[]>([]);
+  const livePresence = useRef<Map<string, 'online' | 'playing' | 'offline'>>(
+    new Map(),
+  );
+
   const socket = getSocket();
 
-  /* ✅ FIXED: Proper typing (no any) */
-  function groupFriends(friends: Friend[]): GroupedFriends {
+  function groupFriends(list: Friend[]): GroupedFriends {
     return {
-      online: friends.filter((f) => f.status === "online"),
-      playing: friends.filter((f) => f.status === "playing"),
-      offline: friends.filter((f) => f.status === "offline" || !f.status),
+      online: list.filter((f) => f.status === 'online'),
+      playing: list.filter((f) => f.status === 'playing'),
+      offline: list.filter((f) => f.status === 'offline' || !f.status),
     };
   }
 
+  const groups = ['online', 'playing', 'offline'] as const;
   const grouped = groupFriends(friends);
 
   useEffect(() => {
-    async function loadFriends() {
-      try {
-        const res = await api.get("/friends");
-        const data: Friend[] = res.data;
-        setFriends(data);
-      } catch (err) {
-        console.error("Failed to load friends:", err);
-      }
-    }
-
-    loadFriends();
-
     const handlePresence = ({ userId, status }: PresenceUpdate) => {
+      livePresence.current.set(userId, status);
       setFriends((prev) =>
         prev.map((f) => (f.id === userId ? { ...f, status } : f)),
       );
     };
 
-    socket.on("presence_update", handlePresence);
+    const handleSnapshot = (data: PresenceUpdate[]) => {
+      data.forEach(({ userId, status }) =>
+        livePresence.current.set(userId, status),
+      );
+      setFriends((prev) =>
+        prev.map((f) => {
+          const found = data.find((d) => d.userId === f.id);
+          return found ? { ...f, status: found.status } : f;
+        }),
+      );
+    };
+
+    socket.on('presence_update', handlePresence);
+    socket.on('presence_snapshot', handleSnapshot);
+
+    async function loadFriends() {
+      try {
+        const res = await api.get('/friends');
+        setFriends(
+          res.data.map((f: Friend) => ({
+            ...f,
+            status: livePresence.current.get(f.id) ?? f.status,
+          })),
+        );
+        // Request fresh snapshot after list is loaded
+        setTimeout(() => socket.emit('request_presence_snapshot'), 100);
+      } catch (err) {
+        console.error('Failed to load friends:', err);
+      }
+    }
+
+    loadFriends();
 
     return () => {
-      socket.off("presence_update", handlePresence);
+      socket.off('presence_update', handlePresence);
+      socket.off('presence_snapshot', handleSnapshot);
     };
   }, [socket]);
 
@@ -73,23 +98,25 @@ export default function FriendsSidebar({ onSelect }: FriendsSidebarProps) {
     <div className="w-64 bg-gray-900 text-white h-full p-3">
       <h2 className="text-lg font-bold mb-3">Friends</h2>
 
-      {(["online", "playing", "offline"] as const).map((group) => (
-        <div key={group}>
-          <h3 className="text-xs text-gray-400 mt-3 uppercase">{group}</h3>
-
-          {grouped[group].length === 0 ? (
-            <p className="text-xs text-gray-500 px-2">No users</p>
-          ) : (
-            grouped[group].map((friend) => (
-              <FriendItem
-                key={friend.id}
-                friend={friend}
-                onClick={() => onSelect(friend)}
-              />
-            ))
-          )}
-        </div>
-      ))}
+      {groups.map((group) => {
+        const list = grouped[group];
+        return (
+          <div key={group}>
+            <h3 className="text-xs text-gray-400 mt-3 uppercase">{group}</h3>
+            {list.length === 0 ? (
+              <p className="text-xs text-gray-500 px-2">No users</p>
+            ) : (
+              list.map((friend) => (
+                <FriendItem
+                  key={friend.id}
+                  friend={friend}
+                  onClick={() => onSelect(friend)}
+                />
+              ))
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

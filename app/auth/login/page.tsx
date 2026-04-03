@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
+import { useAuth } from "@/context/AuthProvider";
 import { api, setAccessToken } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -8,6 +9,7 @@ import { useState } from "react";
 export default function LoginPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const { setAuthed } = useAuth();
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -18,6 +20,7 @@ export default function LoginPage() {
     try {
       const { data } = await api.post("/auth/login", { email, password });
       setAccessToken(data.accessToken);
+      setAuthed(true);
       router.push("/");
     } catch (err: any) {
       setError(err.response?.data?.message ?? "Login failed");

@@ -13,8 +13,11 @@ export default function AddFriend() {
 
       setStatus("Request sent!");
       setEmail("");
-    } catch (err) {
-      setStatus("Failed to send request");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      const message = err?.response?.data?.message || "Failed to send request";
+
+      setStatus(message);
       console.error(err);
     }
   }
@@ -36,7 +39,11 @@ export default function AddFriend() {
         </button>
       </div>
 
-      {status && <p className="mt-2 text-sm">{status}</p>}
+      <p
+        className={`mt-2 text-sm ${status === "Request sent!" ? "text-green-400" : "text-red-400"}`}
+      >
+        {status}
+      </p>
     </div>
   );
 }

@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, KeyboardEvent } from "react";
-import { getChatSocket } from "@/lib/chatSocket";
-import { getSocket } from "@/lib/socket"; // 👈 your game socket
+import { getSocket } from "@/lib/socket";
 
 type ChatInputProps = {
   to?: string;
@@ -12,8 +11,8 @@ type ChatInputProps = {
 export default function ChatInput({ to, gameId }: ChatInputProps) {
   const [text, setText] = useState("");
 
-  const chatSocket = getChatSocket();
-  const gameSocket = getSocket(); // 👈 IMPORTANT
+  const chatSocket = getSocket();
+  const gameSocket = getSocket();
 
   const sendMessage = () => {
     const trimmed = text.trim();
@@ -25,14 +24,12 @@ export default function ChatInput({ to, gameId }: ChatInputProps) {
       return;
     }
 
-    // 🔥 DM → chat socket
+    // DM
     if (to) {
       if (!chatSocket.connected) {
         console.warn("Chat socket not connected");
         return;
       }
-
-      console.log("📤 DM:", trimmed);
 
       chatSocket.emit("dm", {
         to,
@@ -40,14 +37,12 @@ export default function ChatInput({ to, gameId }: ChatInputProps) {
       });
     }
 
-    // 🔥 GAME CHAT → game socket
+    // GAME CHAT
     else if (gameId) {
       if (!gameSocket.connected) {
         console.warn("Game socket not connected");
         return;
       }
-
-      console.log("🎮 Game Chat:", trimmed);
 
       gameSocket.emit("game_chat", {
         gameId,

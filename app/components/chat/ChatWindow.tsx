@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { getChatSocket, connectChatSocket } from "@/lib/chatSocket";
+import { getChatSocket } from "@/lib/chatSocket";
 import MessageItem from "./MessageItem";
 import ChatInput from "./ChatInput";
 import { getUserId } from "@/lib/getUser";
@@ -43,7 +43,7 @@ export default function ChatWindow({
   const socket = getChatSocket();
 
   useEffect(() => {
-    connectChatSocket();
+    getChatSocket();
   }, []);
 
   /* ---------------- DM CHAT ---------------- */
@@ -72,7 +72,7 @@ export default function ChatWindow({
       }
     })();
 
-    // ✅ receive messages
+    // receive messages
     const handleDM = (msg: Message) => {
       const isThisChat =
         (msg.from === currentUserId && msg.to === selectedFriend.id) ||
@@ -102,6 +102,10 @@ export default function ChatWindow({
     if (!gameId) return;
 
     const socket = getSocket();
+
+    if(!socket.connected){
+      socket.connect();
+    }
 
     const handleGameChat = (msg: { from: string; content: string }) => {
       setMessages((prev) => [

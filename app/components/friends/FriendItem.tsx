@@ -1,5 +1,6 @@
 "use client";
 
+import { formatLastSeen } from "@/lib/lastSeen";
 import Image from "next/image";
 
 type Friend = {
@@ -9,6 +10,7 @@ type Friend = {
   avatar?: string;
   rating?: number;
   status?: "online" | "playing" | "offline";
+  lastSeen?: number | null;
 };
 
 type FriendItemProps = {
@@ -16,17 +18,13 @@ type FriendItemProps = {
   onClick?: () => void;
 };
 
-
-export default function FriendItem({
-  friend,
-  onClick,
-}: FriendItemProps) {
+export default function FriendItem({ friend, onClick }: FriendItemProps) {
   const statusColor =
     friend.status === "online"
       ? "bg-green-500"
       : friend.status === "playing"
-      ? "bg-yellow-400"
-      : "bg-gray-500";
+        ? "bg-yellow-400"
+        : "bg-gray-500";
 
   return (
     <div
@@ -49,16 +47,17 @@ export default function FriendItem({
         <p className="text-sm truncate">{friend.email}</p>
         <p className="text-sm truncate">{friend.name}</p>
         {friend.rating !== undefined && (
+          <p className="text-xs text-gray-400">{friend.rating}</p>
+        )}
+        {friend.status === "offline" && (
           <p className="text-xs text-gray-400">
-            {friend.rating}
+            {formatLastSeen(friend.lastSeen)}
           </p>
         )}
       </div>
 
       {/* Presence Dot */}
-      <span
-        className={`w-3 h-3 rounded-full ${statusColor}`}
-      />
+      <span className={`w-3 h-3 rounded-full ${statusColor}`} />
     </div>
   );
 }

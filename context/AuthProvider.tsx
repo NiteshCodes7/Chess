@@ -3,10 +3,13 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { api, setAccessToken } from "@/lib/api";
 import { Loader } from "lucide-react";
+import { getSocket } from "@/lib/socket";
+import { connectAllSockets, disconnectAllSockets } from "@/lib/socketManager";
 
 type AuthContextType = {
   loading: boolean;
   authed: boolean;
+  setAuthed: (v: boolean) => void;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -32,12 +35,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     init();
   }, []);
 
+  useEffect(() => {
+    if (authed) {
+      connectAllSockets();
+    } else {
+      disconnectAllSockets();
+    }
+  }, [authed]);
+
   if (loading) {
-    return <div className="flex justify-center items-center h-screen w-full"><Loader className="animate-spin infinite"/></div>;
+    return (
+      <div className="flex justify-center items-center h-screen w-full">
+        <Loader className="animate-spin infinite" />
+      </div>
+    );
   }
 
   return (
-    <AuthContext.Provider value={{ loading, authed }}>
+    <AuthContext.Provider value={{ loading, authed, setAuthed }}>
       {children}
     </AuthContext.Provider>
   );

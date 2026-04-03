@@ -1,4 +1,5 @@
 import axios from "axios";
+import { updateAllSocketAuth } from "./socketManager";
 
 let accessToken: string | null = null;
 
@@ -29,7 +30,7 @@ api.interceptors.response.use(
      if (originalRequest.url?.includes("/auth/refresh")) {
       setAccessToken(null);
       localStorage.setItem("wsToken", "");
-      return;
+      return Promise.reject(err); ;
     }
 
     if (err.response?.status === 401 && !err.config._retry) {
@@ -38,6 +39,7 @@ api.interceptors.response.use(
         const { data } = await api.post("/auth/refresh");
         setAccessToken(data.accessToken);
         localStorage.setItem("wsToken", data.wsToken);
+        updateAllSocketAuth(data.wsToken)
         return api(err.config);
       } catch {
         setAccessToken(null);

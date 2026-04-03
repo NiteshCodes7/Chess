@@ -29,7 +29,15 @@ export default function FriendRequests() {
   async function accept(id: string) {
     try {
       await api.post(`/friends/accept/${id}`);
+      setRequests((prev) => prev.filter((r) => r.id !== id));
+    } catch (err) {
+      console.error(err);
+    }
+  }
 
+  async function reject(id: string) {
+    try {
+      await api.post(`/friends/reject/${id}`);
       setRequests((prev) => prev.filter((r) => r.id !== id));
     } catch (err) {
       console.error(err);
@@ -45,15 +53,26 @@ export default function FriendRequests() {
           key={req.id}
           className="flex justify-between items-center bg-gray-800 p-3 rounded"
         >
-          <p>{req.from.name}</p>
-          <p>{req.from.email}</p>
+          <div>
+            <p>{req.from.name}</p>
+            <p className="text-sm text-gray-400">{req.from.email}</p>
+          </div>
 
-          <button
-            onClick={() => accept(req.id)}
-            className="bg-green-600 px-3 py-1 rounded"
-          >
-            Accept
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => accept(req.id)}
+              className="bg-green-600 px-3 py-1 rounded"
+            >
+              Accept
+            </button>
+
+            <button
+              onClick={() => reject(req.id)}
+              className="bg-red-600 px-3 py-1 rounded"
+            >
+              Reject
+            </button>
+          </div>
         </div>
       ))}
     </div>
