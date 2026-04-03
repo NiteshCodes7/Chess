@@ -1,25 +1,22 @@
-'use client';
+"use client";
 
-import { useEffect, useRef, useState } from 'react';
-import { getSocket } from '@/lib/socket';
-import FriendItem from './FriendItem';
-import { api } from '@/lib/api';
+import { useState, useEffect } from "react";
+import { getPresenceSocket } from "@/lib/presenceSocket";
+import FriendItem from "./FriendItem";
+
+type Status = "online" | "playing" | "offline";
 
 type Friend = {
   id: string;
   name: string;
   avatar?: string;
   rating?: number;
-  status?: 'online' | 'playing' | 'offline';
+  status?: Status;
+  lastSeen?: number | null;
 };
 
 type FriendsSidebarProps = {
   onSelect: (friend: Friend) => void;
-};
-
-type PresenceUpdate = {
-  userId: string;
-  status: 'online' | 'playing' | 'offline';
 };
 
 type GroupedFriends = {
@@ -30,74 +27,78 @@ type GroupedFriends = {
 
 export default function FriendsSidebar({ onSelect }: FriendsSidebarProps) {
   const [friends, setFriends] = useState<Friend[]>([]);
-  const livePresence = useRef<Map<string, 'online' | 'playing' | 'offline'>>(
-    new Map(),
-  );
-
-  const socket = getSocket();
+  const socket = getPresenceSocket();
 
   function groupFriends(list: Friend[]): GroupedFriends {
     return {
-      online: list.filter((f) => f.status === 'online'),
-      playing: list.filter((f) => f.status === 'playing'),
-      offline: list.filter((f) => f.status === 'offline' || !f.status),
+      online: list.filter((f) => f.status === "online"),
+      playing: list.filter((f) => f.status === "playing"),
+      offline: list.filter((f) => !f.status || f.status === "offline"),
     };
   }
 
-  const groups = ['online', 'playing', 'offline'] as const;
-  const grouped = groupFriends(friends);
-
   useEffect(() => {
-    const handlePresence = ({ userId, status }: PresenceUpdate) => {
-      livePresence.current.set(userId, status);
-      setFriends((prev) =>
-        prev.map((f) => (f.id === userId ? { ...f, status } : f)),
+    // Buffer presence updates that arrive before friends list loads
+    const pendingUpdates = new Map<string, Status>();
+
+    const handleFriends = (data: Friend[]) => {
+      console.log("[friends_with_presence] received:", data);
+      // Apply any buffered presence updates on top
+      setFriends(
+        data.map((f) => ({
+          ...f,
+          status: pendingUpdates.get(f.id) ?? f.status,
+        })),
       );
+      pendingUpdates.clear();
     };
 
-    const handleSnapshot = (data: PresenceUpdate[]) => {
-      data.forEach(({ userId, status }) =>
-        livePresence.current.set(userId, status),
-      );
-      setFriends((prev) =>
-        prev.map((f) => {
-          const found = data.find((d) => d.userId === f.id);
-          return found ? { ...f, status: found.status } : f;
-        }),
-      );
-    };
+    const handlePresence = ({
+      userId,
+      status,
+    }: {
+      userId: string;
+      status: Status;
+    }) => {
+      console.log("[presence_update] received:", userId, status);
+      // Buffer it in case friends list hasn't loaded yet
+      pendingUpdates.set(userId, status);
+      // Also apply immediately if friends already loaded
+      setFriends((prev) => {
+        if (prev.length === 0) return prev; // not loaded yet, buffered above
+        return prev.map((f) => (f.id === userId ? { ...f, status } : f));
+      });
 
-    socket.on('presence_update', handlePresence);
-    socket.on('presence_snapshot', handleSnapshot);
-
-    async function loadFriends() {
-      try {
-        const res = await api.get('/friends');
-        setFriends(
-          res.data.map((f: Friend) => ({
-            ...f,
-            status: livePresence.current.get(f.id) ?? f.status,
-          })),
-        );
-        // Request fresh snapshot after list is loaded
-        setTimeout(() => socket.emit('request_presence_snapshot'), 100);
-      } catch (err) {
-        console.error('Failed to load friends:', err);
+      if (status === 'online') {
+        setTimeout(() => socket.emit("get_friends_with_presence"), 300);
       }
+    };
+
+    const requestFriends = () => {
+      setTimeout(() => socket.emit("get_friends_with_presence"), 1000);
+    };
+
+    socket.on("friends_with_presence", handleFriends);
+    socket.on("presence_update", handlePresence);
+    socket.on("connect", requestFriends);
+
+    if (socket.connected) {
+      requestFriends();
     }
 
-    loadFriends();
-
     return () => {
-      socket.off('presence_update', handlePresence);
-      socket.off('presence_snapshot', handleSnapshot);
+      socket.off("friends_with_presence", handleFriends);
+      socket.off("presence_update", handlePresence);
+      socket.off("connect", requestFriends);
     };
   }, [socket]);
+
+  const groups = ["online", "playing", "offline"] as const;
+  const grouped = groupFriends(friends);
 
   return (
     <div className="w-64 bg-gray-900 text-white h-full p-3">
       <h2 className="text-lg font-bold mb-3">Friends</h2>
-
       {groups.map((group) => {
         const list = grouped[group];
         return (

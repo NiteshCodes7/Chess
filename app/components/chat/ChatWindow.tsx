@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { getChatSocket } from "@/lib/chatSocket";
 import MessageItem from "./MessageItem";
 import ChatInput from "./ChatInput";
 import { getUserId } from "@/lib/getUser";
@@ -40,11 +39,7 @@ export default function ChatWindow({
 }: ChatWindowProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const bottomRef = useRef<HTMLDivElement | null>(null);
-  const socket = getChatSocket();
-
-  useEffect(() => {
-    getChatSocket();
-  }, []);
+  const socket = getSocket();
 
   /* ---------------- DM CHAT ---------------- */
 

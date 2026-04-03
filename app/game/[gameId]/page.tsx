@@ -7,12 +7,12 @@ import ChessBoard from "@/app/components/chess/ChessBoard";
 import {
   AuthoritativeMovePayload,
   ReconnectionState,
-  StateUpdatePayload,
   TimeoutPayload,
 } from "@/types/socket";
 import { api, setAccessToken } from "@/lib/api";
 import { PromotionDialog } from "@/app/components/chess/PromotionDialog";
 import ChatWindow from "@/app/components/chat/ChatWindow";
+import { useRouter } from "next/navigation";
 
 export default function GamePage({
   params,
@@ -20,19 +20,22 @@ export default function GamePage({
   params: Promise<{ gameId: string }>;
 }) {
   const { gameId } = use(params);
-
+  const router = useRouter();
   const board = useGameStore((s) => s.board);
-  const setGameId = useGameStore((s) => s.setGameId);
   const playerColor = useGameStore((s) => s.playerColor);
-  const setPlayerColor = useGameStore((s) => s.setPlayerColor);
   const promotionPending = useGameStore((s) => s.promotionPending);
+  const status = useGameStore((s) => s.status);
 
   useEffect(() => {
     const socket = getSocket();
-    setGameId(gameId);
-    socket.connect();
 
+    useGameStore.getState().setGameId(gameId);
+
+    // Join game room
     socket.emit("join_game", gameId);
+
+    // Try to reconnect to existing game state
+    socket.emit("reconnect");
 
     const onAuthoritativeMove = ({
       board,
@@ -48,18 +51,12 @@ export default function GamePage({
         selected: null,
         promotionPending,
         lastTimestamp,
-        serverTime: {
-          white: time.white,
-          black: time.black,
-        },
+        serverTime: { white: time.white, black: time.black },
       });
       useGameStore.getState().setStatus(status);
     };
 
-    // reconnect
-    socket.emit("reconnect");
-
-    const onReconnection = ({
+    const onReconnected = ({
       board,
       turn,
       color,
@@ -71,13 +68,12 @@ export default function GamePage({
         board,
         turn,
         playerColor: color,
-        serverTime: time,
+        serverTime: { white: time.white, black: time.black },
         lastTimestamp,
         promotionPending,
       });
     };
 
-    // Promotion needed
     const onPromotionNeeded = ({
       position,
       color,
@@ -85,68 +81,36 @@ export default function GamePage({
       position: { row: number; col: number };
       color: "white" | "black";
     }) => {
-      useGameStore.setState({
-        promotionPending: { position, color },
-      });
+      useGameStore.setState({ promotionPending: { position, color } });
     };
 
-    // Timeout
     const onTimeout = ({ winner }: TimeoutPayload) => {
       alert(`Time out! ${winner} wins`);
     };
 
-    // Auto refreshing wsToken
-    socket.on("ws_unauthorized", async () => {
+    const onUnauthorized = async () => {
       console.log("WS token expired, refreshing...");
       const { data } = await api.post("/auth/refresh");
       setAccessToken(data.accessToken);
       localStorage.setItem("wsToken", data.wsToken);
-
-      socket.auth = { wsToken: localStorage.getItem("wsToken") };
+      socket.auth = { wsToken: data.wsToken };
       socket.connect();
-    });
+    };
 
     socket.on("authoritative_move", onAuthoritativeMove);
+    socket.on("reconnected", onReconnected);
     socket.on("promotion_needed", onPromotionNeeded);
-    socket.on("reconnected", onReconnection);
     socket.on("timeout", onTimeout);
+    socket.on("ws_unauthorized", onUnauthorized);
 
     return () => {
       socket.off("authoritative_move", onAuthoritativeMove);
+      socket.off("reconnected", onReconnected);
       socket.off("promotion_needed", onPromotionNeeded);
-      socket.off("reconnected", onReconnection);
       socket.off("timeout", onTimeout);
-      socket.off("ws_unauthorized");
-      socket.disconnect();
+      socket.off("ws_unauthorized", onUnauthorized);
     };
   }, [gameId]);
-
-  useEffect(() => {
-    const socket = getSocket();
-    socket.connect();
-
-    socket.emit("reconnect");
-
-    socket.on("reconnected", (payload: StateUpdatePayload) => {
-      const { color, board, turn, time, lastTimestamp, promotionPending } =
-        payload;
-      setPlayerColor(color!);
-      useGameStore.setState({
-        board,
-        turn,
-        serverTime: {
-          white: time.white,
-          black: time.black,
-        },
-        lastTimestamp,
-        promotionPending,
-      });
-    });
-
-    return () => {
-      socket.off("reconnected");
-    };
-  }, []);
 
   function handlePromotionSelect(
     pieceType: "queen" | "rook" | "bishop" | "knight",
@@ -155,30 +119,55 @@ export default function GamePage({
     const promotion = useGameStore.getState().promotionPending;
     if (!promotion) return;
 
-    const { position } = promotion;
-
     socket.emit("promote", {
       gameId,
       newBoard: board,
-      position,
+      position: promotion.position,
       pieceType,
     });
     useGameStore.setState({ promotionPending: null });
   }
 
+  function getResultMessage() {
+    if (status.state === "checkmate") {
+      return status.winner === playerColor ? "🏆 You Win!" : "💀 You Lose!";
+    }
+    if (status.state === "stalemate") return "🤝 Draw by Stalemate";
+    return null;
+  }
+
+  const resultMessage = getResultMessage();
+
   return (
     <main className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
       <div className="flex flex-col lg:flex-row gap-6 bg-gray-800 p-6 rounded-2xl shadow-2xl">
-        {/* Chess Board Section */}
         <div className="bg-gray-700 p-4 rounded-xl shadow-inner">
           <ChessBoard />
         </div>
-
-        {/* Chat Window Section */}
         <div className="w-full lg:w-80 bg-gray-700 rounded-xl shadow-inner flex flex-col">
           <ChatWindow gameId={gameId} />
         </div>
       </div>
+
+      {/* Game Over Overlay */}
+      {resultMessage && (
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-gray-800 p-10 rounded-2xl shadow-2xl flex flex-col items-center gap-6">
+            <h2 className="text-white text-4xl font-bold">{resultMessage}</h2>
+            <p className="text-gray-400 text-lg capitalize">
+              {status.state === "checkmate"
+                ? `${status.winner} wins by checkmate`
+                : "The game is a draw"}
+            </p>
+            <button
+              onClick={() => router.push("/")}
+              className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition"
+            >
+              Back to Home
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Promotion Modal */}
       {promotionPending && promotionPending.color === playerColor && (

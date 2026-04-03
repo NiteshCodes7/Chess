@@ -7,46 +7,46 @@ import { useGameStore } from "@/store/useGameStore";
 
 export default function PlayPage() {
   const router = useRouter();
-  const socket = getSocket();
 
   useEffect(() => {
-    socket.connect();
+    const socket = getSocket();
 
     socket.emit("find_match");
 
-    socket.on(
-      "match_found",
-      ({ gameId, color, timeMs, incrementMs, lastTimestamp }) => {
-        useGameStore.setState(() => ({
-          playerColor: color,
-          serverTime: {
-            white: timeMs,
-            black: timeMs,
-          },
-          lastTimestamp,
-          incrementMs,
-        }));
+    const onMatchFound = ({ gameId, color, timeMs, incrementMs, lastTimestamp }: { gameId: string; color: 'white' | 'black'; timeMs: number; incrementMs: number; lastTimestamp: number }) => {
+      useGameStore.setState({
+        playerColor: color,
+        serverTime: { white: timeMs, black: timeMs },
+        lastTimestamp,
+        incrementMs,
+      });
+      router.push(`/game/${gameId}`);
+    };
 
-        router.push(`/game/${gameId}`);
-      },
-    );
-
-    socket.on("match_timeout", () => {
+    const onMatchTimeout = () => {
       alert("No opponent found. Try again later.");
-    });
+    };
+
+    const onMatchCanceled = () => {
+      router.push("/");
+    };
+
+    socket.on("match_found", onMatchFound);
+    socket.on("match_timeout", onMatchTimeout);
+    socket.on("match_canceled", onMatchCanceled);
 
     return () => {
-      const socket = getSocket();
-      socket.off("match_found");
-      socket.disconnect();
+      socket.off("match_found", onMatchFound);
+      socket.off("match_timeout", onMatchTimeout);
+      socket.off("match_canceled", onMatchCanceled);
+      // ✅ no disconnect — socket is shared
     };
   }, [router]);
 
   const onCancel = () => {
+    const socket = getSocket();
     socket.emit("cancel_match");
-    socket.on("match_canceled", () => {
-      router.push("/");
-    });
+    // ✅ listener is registered in useEffect, not here
   };
 
   return (

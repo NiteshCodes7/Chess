@@ -3,7 +3,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { api, setAccessToken } from "@/lib/api";
 import { Loader } from "lucide-react";
-import { getSocket } from "@/lib/socket";
 import { connectAllSockets, disconnectAllSockets } from "@/lib/socketManager";
 
 type AuthContextType = {
@@ -31,22 +30,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
       }
     }
-
     init();
   }, []);
 
   useEffect(() => {
-    if (authed) {
-      connectAllSockets();
-    } else {
+    if (!authed) {
       disconnectAllSockets();
+      return;
     }
+    connectAllSockets();
   }, [authed]);
 
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen w-full">
-        <Loader className="animate-spin infinite" />
+        <Loader className="animate-spin" />
       </div>
     );
   }
@@ -60,8 +58,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within AuthProvider");
-  }
+  if (!context) throw new Error("useAuth must be used within AuthProvider");
   return context;
 };
