@@ -147,7 +147,7 @@ export default function FriendsPage() {
       </nav>
 
       {/* ── COLUMN 2: Friends panel ── */}
-      <aside className="hidden md:flex flex-col w-60 bg-[#080808] border-r border-[#0f0f0f] shrink-0">
+      <aside className="hidden md:flex flex-col w-80 bg-[#080808] border-r border-[#0f0f0f] shrink-0">
         {/* Header */}
         <div className="px-4 pt-5 pb-0 shrink-0">
           <p className="text-[#c8a96e] text-xs tracking-[0.22em] uppercase font-light mb-4">
@@ -163,11 +163,14 @@ export default function FriendsPage() {
             ].map((t) => (
               <button
                 key={t.key}
-                onClick={() => setTab(t.key)}
+                onClick={() => {
+                  setTab(t.key)
+                  if(t.key !== "chat") setSelectedFriend(null);
+                }}
                 className={`flex-1 pb-2 text-xs tracking-widest uppercase font-light border-b-2 transition-all duration-150 -mb-px ${
                   tab === t.key
                     ? "text-[#c8a96e] border-[#c8a96e]"
-                    : "text-[#2a2a2a] border-transparent hover:text-[#555]"
+                    : "text-[#8a8888] border-transparent hover:text-[#c3c0c0]"
                 }`}
               >
                 {t.label}
@@ -225,9 +228,9 @@ export default function FriendsPage() {
             {/* Mobile trigger */}
             <SheetTrigger asChild>
               <button className="md:hidden flex flex-col gap-1 w-5 justify-center shrink-0">
-                <span className="block h-px w-full bg-[#444]" />
-                <span className="block h-px w-3/4 bg-[#444]" />
-                <span className="block h-px w-full bg-[#444]" />
+                <span className="block h-px w-full bg-[#878383]" />
+                <span className="block h-px w-3/4 bg-[#878383]" />
+                <span className="block h-px w-full bg-[#878383]" />
               </button>
             </SheetTrigger>
 
@@ -235,7 +238,7 @@ export default function FriendsPage() {
               <>
                 {/* Avatar */}
                 <div className="w-6 h-6 border border-[#1e1e1e] bg-[#0e0e0e] flex items-center justify-center shrink-0">
-                  <span className="text-[10px] text-[#444] font-light">
+                  <span className="text-[10px] text-[#545151] font-light">
                     {selectedFriend.name?.[0]?.toUpperCase() ?? "?"}
                   </span>
                 </div>
@@ -248,7 +251,7 @@ export default function FriendsPage() {
                 </h2>
 
                 {/* Divider */}
-                <span className="text-[#1e1e1e] text-xs">|</span>
+                <span className="text-[#878383] text-xs">|</span>
 
                 {/* Status */}
                 <div className="flex items-center gap-1.5">
@@ -263,7 +266,7 @@ export default function FriendsPage() {
                             : "#2a2a2a",
                     }}
                   />
-                  <span className="text-[#333] text-xs font-light capitalize">
+                  <span className="text-[#878383] text-xs font-light capitalize">
                     {selectedFriend.status === "playing"
                       ? "In a game"
                       : (selectedFriend.status ?? "Offline")}
@@ -273,7 +276,7 @@ export default function FriendsPage() {
                 {/* Rating badge */}
                 {selectedFriend.rating && (
                   <div className="ml-auto flex items-center gap-1.5 border border-[#1a1a1a] px-2 py-0.5">
-                    <span className="text-[#333] text-[10px] tracking-widest">
+                    <span className="text-[#878383] text-[10px] tracking-widest">
                       ELO
                     </span>
                     <span
@@ -304,20 +307,20 @@ export default function FriendsPage() {
               </div>
             ) : (
               <div className="h-full flex flex-col items-center justify-center gap-5 slide-up">
-                <div className="w-16 h-16 border border-[#111] bg-[#080808] flex items-center justify-center">
-                  <span className="text-3xl opacity-[0.07] select-none">♛</span>
+                <div className="w-16 h-16 border border-[#6e6d6d] bg-[#080808] flex items-center justify-center">
+                  <span className="select-none text-3xl" style={{ color: "#878383", opacity: 0.4 }}>♛</span>
                 </div>
                 <div className="text-center">
                   <div className="flex items-center gap-3 justify-center mb-1.5">
-                    <span className="block w-5 h-px bg-[#1a1a1a]" />
-                    <span className="text-[#1e1e1e] text-xs tracking-[0.2em] uppercase">
+                    <span className="block w-5 h-px bg-[#878383]" />
+                    <span className="text-[#878383] text-xs tracking-[0.2em] uppercase">
                       {tab === "chat"
                         ? "No conversation open"
                         : tab === "requests"
                           ? "Manage requests in the panel"
                           : "Search for a player"}
                     </span>
-                    <span className="block w-5 h-px bg-[#1a1a1a]" />
+                    <span className="block w-5 h-px bg-[#878383]" />
                   </div>
                   <p className="text-[#161616] text-xs font-light">
                     {tab === "chat"

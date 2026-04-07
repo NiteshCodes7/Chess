@@ -77,6 +77,7 @@ export default function PlayPage() {
   useEffect(() => {
     const socket = getSocket();
     const onBanned = ({
+      reason,
       remainingMs,
     }: {
       reason: string;

@@ -35,6 +35,7 @@ export default function GamePage({
   const [timer, setTimer] = useState(10);
   const [opponentDisconnected, setOpponentDisconnected] = useState(false);
   const [countdown, setCountdown] = useState(30);
+  const [chatOpen, setChatOpen] = useState(false);
 
   useEffect(() => {
     const socket = getSocket();
@@ -284,18 +285,49 @@ export default function GamePage({
   const resultMessage = getResultMessage();
 
   return (
-    <main className="min-h-screen bg-gray-900 flex items-center justify-center p-2 sm:p-4">
-      <div className="w-full max-w-6xl flex flex-col lg:flex-row gap-3 sm:gap-4 lg:gap-6 bg-gray-800 p-3 sm:p-4 lg:p-6 rounded-2xl shadow-2xl">
+    <main className="min-h-screen bg-[#080808] flex items-center justify-center p-2 sm:p-4">
+      <button
+        onClick={() => setChatOpen((prev) => !prev)}
+        className="fixed bottom-4 right-4 z-50 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-lg transition"
+      >
+        💬
+      </button>
+      <div className="w-full max-w-6xl flex flex-col lg:flex-row gap-3 sm:gap-4 lg:gap-6 bg-[#080808] p-3 sm:p-4 lg:p-6 rounded-2xl shadow-2xl">
         {/* CHESS BOARD */}
-        <div className="flex-1 bg-gray-700 p-2 sm:p-3 lg:p-4 rounded-xl shadow-inner flex items-center justify-center">
+        <div className="flex-1 bg-[#080808] p-2 sm:p-3 lg:p-4 rounded-xl shadow-inner flex items-center justify-center">
           <div className="w-full max-w-125">
             <ChessBoard />
           </div>
         </div>
 
         {/* CHAT */}
-        <div className="w-full lg:w-80 h-[38vh] sm:h-[42vh] md:h-[45vh] lg:h-auto bg-gray-700 rounded-xl shadow-inner flex flex-col overflow-hidden">
-          <ChatWindow gameId={gameId} />
+        {/* CHAT DRAWER */}
+        <div
+          className={`
+            fixed z-40 bg-[#080808] shadow-2xl transition-all duration-300
+            ${chatOpen ? "translate-y-0 opacity-100" : "translate-y-full opacity-0"}
+            
+            bottom-0 left-0 w-full h-[50vh]   /* mobile */
+            
+            lg:top-0 lg:right-0 lg:bottom-auto lg:left-auto
+            lg:h-full lg:w-80
+            ${chatOpen ? "lg:translate-x-0" : "lg:translate-x-full"}
+          `}
+        >
+          <div className="h-full flex flex-col rounded-t-2xl lg:rounded-none overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between p-3 bg-gray-900">
+              <span className="text-white font-semibold">Chat</span>
+              <button
+                onClick={() => setChatOpen(false)}
+                className="text-gray-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+
+            <ChatWindow gameId={gameId} />
+          </div>
         </div>
 
         {/* Game Over Overlay */}
@@ -421,7 +453,10 @@ export default function GamePage({
         {promotionPending && promotionPending.color === playerColor && (
           <div className="absolute inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center z-50">
             <div className="bg-gray-800 p-6 rounded-xl shadow-xl">
-              <PromotionDialog onSelect={handlePromotionSelect} color={playerColor === "white" ? "white" : "black"} />
+              <PromotionDialog
+                onSelect={handlePromotionSelect}
+                color={playerColor === "white" ? "white" : "black"}
+              />
             </div>
           </div>
         )}

@@ -2,9 +2,6 @@
 
 import { useState, KeyboardEvent } from "react";
 import { getSocket } from "@/lib/socket";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Send } from "lucide-react";
 
 type ChatInputProps = {
   to?: string;
@@ -14,43 +11,17 @@ type ChatInputProps = {
 export default function ChatInput({ to, gameId }: ChatInputProps) {
   const [text, setText] = useState("");
 
-  const chatSocket = getSocket();
-  const gameSocket = getSocket();
-
   const sendMessage = () => {
     const trimmed = text.trim();
+    if (!trimmed || (!to && !gameId)) return;
 
-    if (!trimmed) return;
+    const socket = getSocket();
+    if (!socket.connected) return;
 
-    if (!to && !gameId) {
-      console.warn("No target provided");
-      return;
-    }
-
-    // DM
     if (to) {
-      if (!chatSocket.connected) {
-        console.warn("Chat socket not connected");
-        return;
-      }
-
-      chatSocket.emit("dm", {
-        to,
-        content: trimmed,
-      });
-    }
-
-    // GAME CHAT
-    else if (gameId) {
-      if (!gameSocket.connected) {
-        console.warn("Game socket not connected");
-        return;
-      }
-
-      gameSocket.emit("game_chat", {
-        gameId,
-        content: trimmed,
-      });
+      socket.emit("dm", { to, content: trimmed });
+    } else if (gameId) {
+      socket.emit("game_chat", { gameId, content: trimmed });
     }
 
     setText("");
@@ -63,25 +34,58 @@ export default function ChatInput({ to, gameId }: ChatInputProps) {
     }
   };
 
-  return (
-    <div className="border-t bg-background p-3">
-      <div className="flex items-center gap-2">
-        <Input
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Type a message..."
-          className="flex-1"
-        />
+  const isActive = text.trim().length > 0;
 
-        <Button
-          onClick={sendMessage}
-          disabled={!text.trim()}
-          size="icon"
+  return (
+    <div className="flex items-center gap-2 px-3 py-2.5 bg-[#0b0b0b] border-t border-[#1f1f1f]">
+      <input
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder="Type a message…"
+        className="
+          flex-1 h-9 px-3
+          bg-[#121212]
+          border border-[#2a2a2a]
+          text-[#e5e5e5]
+          placeholder-[#6b6b6b]
+          text-xs font-light
+          rounded-md
+          outline-none
+          focus:border-[#e0b970]
+          focus:ring-2 focus:ring-[#e0b970]/40
+          transition-all duration-150
+        "
+      />
+
+      <button
+        onClick={sendMessage}
+        disabled={!isActive}
+        className={`
+          w-9 h-9 flex items-center justify-center rounded-md
+          border transition-all duration-150
+
+          ${
+            isActive
+              ? "bg-[#e0b970] border-[#e0b970] text-black hover:bg-[#f0c980]"
+              : "bg-[#121212] border-[#2a2a2a] text-[#555]"
+          }
+
+          active:scale-95
+          disabled:cursor-not-allowed
+        `}
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          className="w-4 h-4"
         >
-          <Send className="h-4 w-4" />
-        </Button>
-      </div>
+          <line x1="22" y1="2" x2="11" y2="13" />
+          <polygon points="22 2 15 22 11 13 2 9 22 2" />
+        </svg>
+      </button>
     </div>
   );
 }

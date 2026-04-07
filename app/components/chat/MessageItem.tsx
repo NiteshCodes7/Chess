@@ -14,25 +14,48 @@ type MessageItemProps = {
 export default function MessageItem({ message, isGameChat }: MessageItemProps) {
   const isMe = message.isMe ?? false;
 
+  const time = message.createdAt
+    ? new Date(message.createdAt).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : null;
+
   return (
-    <div className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
+    <div
+      className={`flex flex-col ${isMe ? "items-end" : "items-start"} gap-1`}
+    >
       <div
         className={`
-          px-3 py-2
-          ${isMe ? "bg-indigo-600 text-white" : "bg-gray-700 text-gray-200"}
-          ${isGameChat ? "text-xs px-2 py-1" : "text-sm"}
-          ${isGameChat && isMe ? "shadow-[0_0_8px_rgba(99,102,241,0.6)]" : ""}
+          max-w-[75%] px-3 py-2
+          ${isGameChat ? "text-[11px]" : "text-xs"}
+          font-light leading-relaxed rounded-md
         `}
+        style={{
+          background: isMe ? "#1f1a14" : "#111111",
+          border: `1px solid ${isMe ? "#3a2f1f" : "#1c1c1c"}`,
+          color: isMe ? "#e6d3a3" : "#d1d1d1",
+        }}
       >
+        {/* Sender indicator for game chat */}
+        {isGameChat && (
+          <span
+            className="block text-[10px] mb-1 font-medium tracking-wide"
+            style={{
+              color: isMe ? "#d4b06a" : "#6b7280",
+            }}
+          >
+            {isMe ? "You" : "Opponent"}
+          </span>
+        )}
+
         {message.content}
       </div>
 
-      {message.createdAt && (
-        <span className="text-[10px] opacity-70 block mt-1 text-right">
-          {new Date(message.createdAt).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
+      {/* Timestamp */}
+      {time && (
+        <span className="text-[10px] font-light" style={{ color: "#555" }}>
+          {time}
         </span>
       )}
     </div>

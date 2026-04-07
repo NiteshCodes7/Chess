@@ -1,13 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getPresenceSocket } from "@/lib/presenceSocket";
-import FriendItem from "./FriendItem";
-import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { formatLastSeen } from "@/lib/lastSeen";
 
 type Status = "online" | "playing" | "offline";
 
@@ -30,9 +25,22 @@ type GroupedFriends = {
   offline: Friend[];
 };
 
+const STATUS_COLORS: Record<Status, string> = {
+  online: "#4a8a4a",
+  playing: "#c8a96e",
+  offline: "#2a2a2a",
+};
+
+const STATUS_LABELS: Record<Status, string> = {
+  online: "Online",
+  playing: "Playing",
+  offline: "Offline",
+};
+
 export default function FriendsSidebar({ onSelect }: FriendsSidebarProps) {
   const [friends, setFriends] = useState<Friend[]>([]);
   const [search, setSearch] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
   const socket = getPresenceSocket();
 
   function groupFriends(list: Friend[]): GroupedFriends {
@@ -43,16 +51,18 @@ export default function FriendsSidebar({ onSelect }: FriendsSidebarProps) {
     };
   }
 
-  /* Search */
   const query = search.trim().toLowerCase();
-
   const filteredFriends = friends.filter((f) =>
     f.name.toLowerCase().includes(query)
   );
-
   const grouped = groupFriends(filteredFriends);
+  const totalOnline = friends.filter(
+    (f) => f.status === "online" || f.status === "playing"
+  ).length;
 
+  // handle latest status of users
   useEffect(() => {
+    // Buffer store
     const pendingUpdates = new Map<string, Status>();
 
     const handleFriends = (data: Friend[]) => {
@@ -65,22 +75,13 @@ export default function FriendsSidebar({ onSelect }: FriendsSidebarProps) {
       pendingUpdates.clear();
     };
 
-    const handlePresence = ({
-      userId,
-      status,
-    }: {
-      userId: string;
-      status: Status;
-    }) => {
+    const handlePresence = ({ userId, status }: { userId: string; status: Status }) => {
+      // Add buffer for status
       pendingUpdates.set(userId, status);
-
       setFriends((prev) => {
         if (!prev.length) return prev;
-        return prev.map((f) =>
-          f.id === userId ? { ...f, status } : f
-        );
+        return prev.map((f) => (f.id === userId ? { ...f, status } : f));
       });
-
       if (status === "online") {
         setTimeout(() => socket.emit("get_friends_with_presence"), 300);
       }
@@ -94,9 +95,7 @@ export default function FriendsSidebar({ onSelect }: FriendsSidebarProps) {
     socket.on("presence_update", handlePresence);
     socket.on("connect", requestFriends);
 
-    if (socket.connected) {
-      requestFriends();
-    }
+    if (socket.connected) requestFriends();
 
     return () => {
       socket.off("friends_with_presence", handleFriends);
@@ -106,75 +105,174 @@ export default function FriendsSidebar({ onSelect }: FriendsSidebarProps) {
   }, [socket]);
 
   return (
-    <div className="w-72 h-full bg-background border-r flex flex-col">
-      
+    <div className="flex flex-col h-full bg-[#080808]">
+      <style>{`
+        .fs-scroll::-webkit-scrollbar { width: 3px; }
+        .fs-scroll::-webkit-scrollbar-track { background: transparent; }
+        .fs-scroll::-webkit-scrollbar-thumb { background: #1a1a1a; border-radius: 2px; }
+        .fs-scroll::-webkit-scrollbar-thumb:hover { background: #2a2a2a; }
+        .friend-row:hover .friend-row-bg { opacity: 1; }
+      `}</style>
+
       {/* Header */}
-      <div className="p-4 text-lg font-semibold">Friends</div>
-
-      {/* Search */}
-      <div className="p-3 border-b">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search"
-            className="pl-9 pr-8 h-9 bg-muted border-none focus-visible:ring-1"
-          />
-
-          {search && (
-            <Button
-            variant={"ghost"}
-              onClick={() => setSearch("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs"
-            >
-              ✕
-            </Button>
+      <div className="px-4 pt-4 pb-3 shrink-0">
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-[#c8a96e] text-xs tracking-[0.2em] uppercase font-light">
+            All Friends
+          </p>
+          {totalOnline > 0 && (
+            <span className="text-[10px] text-[#4a8a4a] tracking-widest font-light">
+              {totalOnline} online
+            </span>
           )}
         </div>
+
+        {/* Search */}
+        <div className="relative">
+          <svg
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-[#878383] pointer-events-none"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.35-4.35" />
+          </svg>
+          <input
+            ref={inputRef}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search friends"
+            className="w-full h-8 pl-8 pr-7 bg-[#0e0e0e] border border-[#141414] text-[#aaa] placeholder-[#878383] text-xs font-light tracking-wide focus:outline-none focus:border-[#2a2a2a] transition-colors duration-150"
+            style={{ fontFamily: "inherit" }}
+          />
+          {search && (
+            <button
+              onClick={() => { setSearch(""); inputRef.current?.focus(); }}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#333] hover:text-[#555] text-xs transition-colors"
+            >
+              ×
+            </button>
+          )}
+        </div>
+
+        {/* No results */}
+        {search && filteredFriends.length === 0 && (
+          <p className="text-[#6a6969] text-xs font-light mt-2 px-1">
+            No results for &quot;{search}&apos;
+          </p>
+        )}
       </div>
 
-      {search && filteredFriends.length === 0 && (
-        <p className="text-xs text-muted-foreground px-3 py-2">
-          No results found
-        </p>
-      )}
+      {/* Divider */}
+      <div className="h-px bg-[#0f0f0f] shrink-0" />
 
-      <Separator />
-
-      {/* Friends List */}
-      <ScrollArea className="flex-1 px-3">
+      {/* Groups */}
+      <div className="flex-1 overflow-y-auto fs-scroll px-2 pb-4">
         {(["online", "playing", "offline"] as const).map((group) => {
           const list = grouped[group];
-
           if (search && list.length === 0) return null;
 
           return (
             <div key={group} className="mt-4">
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-2 px-2">
-                {group}
-              </h3>
-
-              <div className="space-y-1">
-                {list.length === 0 ? (
-                  <p className="text-xs text-muted-foreground px-2">
-                    No users
-                  </p>
-                ) : (
-                  list.map((friend) => (
-                    <FriendItem
-                      key={friend.id}
-                      friend={friend}
-                      onClick={() => onSelect(friend)}
-                    />
-                  ))
-                )}
+              {/* Group label */}
+              <div className="flex items-center gap-2 px-2 mb-1.5">
+                <div
+                  className="w-1.5 h-1.5 rounded-full"
+                  style={{ background: STATUS_COLORS[group] }}
+                />
+                <span className="text-[10px] text-[#878383] tracking-[0.18em] uppercase font-light">
+                  {STATUS_LABELS[group]}
+                </span>
+                <span className="text-[10px] text-[#444] ml-auto">
+                  {list.length}
+                </span>
               </div>
+
+              {list.length === 0 ? (
+                <p className="text-[#444] text-xs px-4 py-1 font-light">—</p>
+              ) : (
+                <div className="space-y-px">
+                  {list.map((friend) => (
+                    <button
+                      key={friend.id}
+                      onClick={() => onSelect(friend)}
+                      className="friend-row w-full text-left px-2 py-2 relative group transition-colors duration-100"
+                    >
+                      {/* Hover bg */}
+                      <div className="friend-row-bg absolute inset-0 bg-[#0e0e0e] opacity-0 transition-opacity duration-100" />
+
+                      <div className="relative flex items-center gap-2.5">
+                        {/* Avatar */}
+                        <div className="relative shrink-0">
+                          <div className="w-7 h-7 border border-[#1a1a1a] bg-[#111] flex items-center justify-center">
+                            {friend.avatar ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={friend.avatar}
+                                alt={friend.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <span className="text-[11px] text-[#666] font-light">
+                                {friend.name[0]?.toUpperCase()}
+                              </span>
+                            )}
+                          </div>
+                          {/* Status dot */}
+                          <div
+                            className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border border-[#080808]"
+                            style={{ background: STATUS_COLORS[friend.status ?? "offline"] }}
+                          />
+                        </div>
+
+                        {/* Name + info */}
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[#d0c8b8] group-hover:text-[#f0ebe0] text-xs font-light truncate transition-colors duration-100">
+                            {friend.name}
+                          </p>
+                          <p className="text-[#555] group-hover:text-[#555] text-[10px] font-light truncate transition-colors duration-100">
+                            {friend.status === "playing"
+                              ? "In a game"
+                              : friend.status === "online"
+                                ? "Online"
+                                : friend.lastSeen
+                                  ? `Last seen ${formatLastSeen(friend.lastSeen)}`
+                                  : "Offline"}
+                          </p>
+                        </div>
+
+                        {/* Rating */}
+                        {friend.rating && (
+                          <div className="shrink-0 text-right">
+                            <span
+                              className="text-[10px] text-[#555] group-hover:text-[#c8a96e] font-light transition-colors duration-100"
+                              style={{ fontFamily: "Georgia, serif" }}
+                            >
+                              {friend.rating}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           );
         })}
-      </ScrollArea>
+
+        {/* Empty state */}
+        {friends.length === 0 && !search && (
+          <div className="flex flex-col items-center justify-center py-12 gap-3">
+            <span className="text-2xl opacity-10 select-none" style={{ color: "#878383", opacity: 0.7}}>♟</span>
+            <p className="text-[#878383] text-xs font-light tracking-wide">
+              No friends yet
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

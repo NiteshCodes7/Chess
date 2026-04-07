@@ -20,7 +20,7 @@ export default function ChessBoard({ spectator = false }) {
   }
 
   return (
-    <div>
+    <div className="bg-[#080808]">
       <p className="text-white mb-2 text-center">
         Turn: <strong>{turn.toUpperCase()}</strong> | Status:{" "}
         <strong>{status.state}</strong>

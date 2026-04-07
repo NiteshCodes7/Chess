@@ -6,7 +6,6 @@ import ChatInput from "./ChatInput";
 import { getUserId } from "@/lib/getUser";
 import { api } from "@/lib/api";
 import { getSocket } from "@/lib/socket";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 type Friend = {
   id: string;
@@ -43,18 +42,13 @@ export default function ChatWindow({
   const isGameChat = !!gameId;
   const socket = getSocket();
 
-  /* ---------------- DM CHAT ---------------- */
-
   useEffect(() => {
     if (!selectedFriend || gameId) return;
-
     const currentUserId = getUserId();
 
-    // fetch history
     (async () => {
       try {
         const res = await api.get(`/chat/${selectedFriend.id}`);
-
         setMessages(
           res.data.map((msg: ApiMessage) => ({
             from: msg.senderId,
@@ -69,40 +63,27 @@ export default function ChatWindow({
       }
     })();
 
-    // receive messages
     const handleDM = (msg: Message) => {
       const isThisChat =
         (msg.from === currentUserId && msg.to === selectedFriend.id) ||
         (msg.from === selectedFriend.id && msg.to === currentUserId);
-
       if (!isThisChat) return;
-
       setMessages((prev) => [
         ...prev,
-        {
-          ...msg,
-          isMe: msg.from === currentUserId,
-        },
+        { ...msg, isMe: msg.from === currentUserId },
       ]);
     };
 
     socket.on("dm", handleDM);
-
     return () => {
       socket.off("dm", handleDM);
     };
   }, [selectedFriend, gameId, socket]);
 
-  /* ---------------- GAME CHAT ---------------- */
-
   useEffect(() => {
     if (!gameId) return;
-
     const socket = getSocket();
-
-    if (!socket.connected) {
-      socket.connect();
-    }
+    if (!socket.connected) socket.connect();
 
     const handleGameChat = (msg: { from: string; content: string }) => {
       setMessages((prev) => [
@@ -116,7 +97,6 @@ export default function ChatWindow({
     };
 
     socket.on("game_chat", handleGameChat);
-
     return () => {
       socket.off("game_chat", handleGameChat);
     };
@@ -128,41 +108,63 @@ export default function ChatWindow({
 
   if (!selectedFriend && !gameId) {
     return (
-      <div className="flex-1 flex items-center justify-center text-gray-400">
-        Select a friend to start chatting
+      <div className="flex-1 flex items-center justify-center">
+        <p className="text-[#444] text-xs font-light tracking-[0.15em] uppercase">
+          Select a friend to start chatting
+        </p>
       </div>
     );
   }
 
   return (
-    <div
-      className={`flex flex-col h-full max-h-full overflow-hidden ${
-        isGameChat
-          ? "bg-gray-900 text-gray-200 border border-gray-700"
-          : "bg-background"
-      }`}
-    >
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 shrink-0 border-b border-gray-700">
-        <Avatar className="h-8 w-8 bg-indigo-600">
-          <AvatarFallback>GC</AvatarFallback>
-        </Avatar>
+    <div className="flex flex-col h-full max-h-full overflow-hidden bg-[#0a0a0a]">
+      <style>{`
+        .chat-scroll::-webkit-scrollbar { width: 3px; }
+        .chat-scroll::-webkit-scrollbar-track { background: transparent; }
+        .chat-scroll::-webkit-scrollbar-thumb { background: #1a1a1a; border-radius: 2px; }
+        .chat-scroll::-webkit-scrollbar-thumb:hover { background: #2a2a2a; }
+      `}</style>
 
-        <div className="flex flex-col">
-          <span className="text-sm font-semibold text-white">
-            {isGameChat ? "Game Chat" : selectedFriend?.name}
-          </span>
-          {isGameChat && (
-            <span className="text-xs text-gray-400">Live match messages</span>
-          )}
+      {/* Header — only for game chat, DM header is in FriendsPage topbar */}
+      {isGameChat && (
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-[#111] shrink-0">
+          <div className="w-7 h-7 border border-[#1e1e1e] bg-[#0e0e0e] flex items-center justify-center">
+            <span
+              className="text-base select-none"
+              style={{ color: "#c8a96e" }}
+            >
+              ♟
+            </span>
+          </div>
+          <div>
+            <p
+              className="text-[#d0c8b8] text-xs font-light"
+              style={{ fontFamily: "Georgia, serif" }}
+            >
+              Game Chat
+            </p>
+            <p className="text-[#444] text-[10px] font-light">
+              Live match messages
+            </p>
+          </div>
         </div>
-      </div>
+      )}
+
       {/* Messages */}
-      <div
-        className={`flex-1 overflow-y-auto px-3 py-2 space-y-2 ${
-          isGameChat ? "text-sm" : "space-y-3"
-        } chat-scroll`}
-      >
+      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-1 chat-scroll">
+        {messages.length === 0 && (
+          <div className="flex flex-col items-center justify-center h-full gap-2 py-8">
+            <span
+              className="text-2xl select-none"
+              style={{ color: "#878383", opacity: 0.3 }}
+            >
+              ♛
+            </span>
+            <p className="text-[#333] text-xs font-light tracking-wide">
+              No messages yet
+            </p>
+          </div>
+        )}
         {messages.map((msg, i) => (
           <MessageItem
             key={msg.id ?? i}
@@ -174,7 +176,7 @@ export default function ChatWindow({
       </div>
 
       {/* Input */}
-      <div className="shrink-0 border-t">
+      <div className="shrink-0 border-t border-[#111]">
         <ChatInput gameId={gameId} to={selectedFriend?.id} />
       </div>
     </div>
