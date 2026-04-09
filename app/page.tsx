@@ -2,10 +2,90 @@
 
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthProvider";
+import { useEffect, useState, useRef } from "react";
+import { getSocket } from "@/lib/socket";
+import { useGameStore } from "@/store/useGameStore";
+import { ReconnectionState } from "@/types/socket";
 
 export default function LandingPage() {
   const router = useRouter();
   const { loading, authed } = useAuth();
+
+  const [rejoinOffer, setRejoinOffer] = useState<ReconnectionState | null>(null);
+  const [rejoinTimer, setRejoinTimer] = useState(30);
+  const forfeitCalledRef = useRef(false);
+
+  // ── Listen for reconnected event on landing page ──
+  useEffect(() => {
+    const socket = getSocket();
+
+    const onReconnected = (state: ReconnectionState) => {
+      forfeitCalledRef.current = false;
+      setRejoinTimer(30);
+      setRejoinOffer(state);
+    };
+
+    socket.off("reconnected");
+    socket.on("reconnected", onReconnected);
+
+    // Trigger reconnect check when landing page mounts
+    socket.emit("reconnect");
+
+    return () => {
+      socket.off("reconnected", onReconnected);
+    };
+  }, []);
+
+  // ── Countdown + auto-forfeit ──
+  useEffect(() => {
+    if (!rejoinOffer) return;
+    forfeitCalledRef.current = false;
+    setRejoinTimer(30);
+
+    const interval = setInterval(() => {
+      setRejoinTimer((p) => {
+        if (p <= 1) {
+          clearInterval(interval);
+          if (!forfeitCalledRef.current) {
+            forfeitCalledRef.current = true;
+            // eslint-disable-next-line react-hooks/immutability
+            handleForfeit(rejoinOffer.gameId);
+          }
+          return 0;
+        }
+        return p - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [rejoinOffer]);
+
+  function handleRejoin() {
+    if (!rejoinOffer) return;
+    useGameStore.setState({
+      board: rejoinOffer.board,
+      turn: rejoinOffer.turn,
+      playerColor: rejoinOffer.color,
+      serverTime: {
+        white: rejoinOffer.time.white,
+        black: rejoinOffer.time.black,
+      },
+      lastTimestamp: rejoinOffer.lastTimestamp,
+      promotionPending: rejoinOffer.promotionPending,
+      gameId: rejoinOffer.gameId,
+      status: { state: "playing", winner: null },
+    });
+    setRejoinOffer(null);
+    router.push(`/game/${rejoinOffer.gameId}`);
+  }
+
+  function handleForfeit(gameId?: string) {
+    const id = gameId ?? rejoinOffer?.gameId;
+    if (!id) return;
+    getSocket().emit("forfeit", { gameId: id });
+    setRejoinOffer(null);
+    useGameStore.getState().resetGame();
+  }
 
   if (loading) {
     return (
@@ -89,10 +169,14 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-[#e8e0d0] overflow-x-hidden">
 
-      {/* Keyframes injected once */}
       <style>{`
         @keyframes fadeUp {
           from { opacity: 0; transform: translateY(24px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(20px); }
           to { opacity: 1; transform: translateY(0); }
         }
         @keyframes boardReveal {
@@ -105,6 +189,8 @@ export default function LandingPage() {
         }
         .animate-fade-up { animation: fadeUp 0.8s ease both; }
         .animate-board-reveal { animation: boardReveal 1s ease 0.3s both; }
+        .modal-bg { animation: fadeIn 0.2s ease both; }
+        .modal-card { animation: slideUp 0.25s ease both; }
       `}</style>
 
       {/* ── NAV ── */}
@@ -136,16 +222,12 @@ export default function LandingPage() {
 
       {/* ── HERO ── */}
       <section className="relative min-h-screen flex items-center px-6 md:px-12 pt-28 pb-16 md:pb-0 overflow-hidden">
-
-        {/* Left content */}
         <div className="relative z-10 max-w-lg animate-fade-up">
-          {/* Eyebrow */}
           <div className="flex items-center gap-3 mb-6">
             <span className="block w-8 h-px bg-[#c8a96e]" />
             <span className="text-[#c8a96e] text-xs tracking-[0.25em] uppercase">The art of chess</span>
           </div>
 
-          {/* Title */}
           <h1
             className="text-6xl md:text-7xl lg:text-[5.5rem] font-light leading-none tracking-tight text-[#f0ebe0] mb-7"
             style={{ fontFamily: "Georgia, serif" }}
@@ -160,7 +242,6 @@ export default function LandingPage() {
             Compete, analyse, and master your craft.
           </p>
 
-          {/* CTAs */}
           <div className="flex gap-4 flex-wrap">
             {authed ? (
               <button
@@ -346,6 +427,97 @@ export default function LandingPage() {
           © {new Date().getFullYear()} Chessify. All rights reserved.
         </span>
       </footer>
+
+      {/* ── REJOIN GAME POPUP ── */}
+      {rejoinOffer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center modal-bg">
+          <div
+            className="absolute inset-0 bg-black/75"
+            style={{ backdropFilter: "blur(8px)" }}
+          />
+          <div
+            className="relative z-10 flex flex-col items-center gap-6 px-10 py-10 border border-[#3a2a10] modal-card"
+            style={{
+              minWidth: "320px",
+              maxWidth: "400px",
+              width: "90vw",
+              background: "rgba(8,8,8,0.97)",
+              backdropFilter: "blur(16px)",
+              boxShadow: "0 0 80px rgba(200,169,110,0.08)",
+            }}
+          >
+            {/* Header */}
+            <div className="flex items-center gap-3">
+              <span className="block w-6 h-px bg-[#c8a96e] opacity-40" />
+              <span className="text-[#c8a96e] text-xs tracking-[0.25em] uppercase">
+                Game in progress
+              </span>
+              <span className="block w-6 h-px bg-[#c8a96e] opacity-40" />
+            </div>
+
+            {/* Chess piece icon */}
+            <div className="text-5xl select-none" style={{ filter: "drop-shadow(0 0 12px rgba(200,169,110,0.3))" }}>
+              {rejoinOffer.color === "white" ? "♔" : "♚"}
+            </div>
+
+            {/* Message */}
+            <div className="text-center">
+              <p
+                className="text-[#d0c8b8] text-base font-light mb-2"
+                style={{ fontFamily: "Georgia, serif" }}
+              >
+                You have an unfinished game
+              </p>
+              <p className="text-[#555] text-xs font-light leading-relaxed">
+                Playing as{" "}
+                <span className="text-[#c8a96e]">{rejoinOffer.color}</span>.
+                Return to continue or forfeit the match.
+              </p>
+            </div>
+
+            {/* Countdown bar */}
+            <div className="w-full">
+              <div className="h-px bg-[#1a1a1a] relative overflow-hidden">
+                <div
+                  className="absolute left-0 top-0 h-full bg-[#c8a96e] transition-all duration-1000"
+                  style={{
+                    width: `${(rejoinTimer / 30) * 100}%`,
+                    opacity: 0.6,
+                  }}
+                />
+              </div>
+              <p className="text-[#333] text-[10px] font-light mt-1.5 flex justify-between tabular-nums">
+                <span>Auto-forfeits on timeout</span>
+                <span>{rejoinTimer}s</span>
+              </p>
+            </div>
+
+            {/* Buttons */}
+            <div className="flex flex-col gap-2 w-full">
+              <button
+                onClick={handleRejoin}
+                className="w-full py-3 text-xs font-light tracking-[0.15em] uppercase border border-[#c8a96e] text-[#c8a96e] transition-all duration-150"
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background = "#c8a96e";
+                  (e.currentTarget as HTMLButtonElement).style.color = "#0a0a0a";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+                  (e.currentTarget as HTMLButtonElement).style.color = "#c8a96e";
+                }}
+              >
+                Rejoin game
+              </button>
+              <button
+                onClick={() => handleForfeit()}
+                className="w-full py-3 text-xs font-light tracking-[0.15em] uppercase border border-[#3a1a1a] text-[#6a3030] hover:border-[#8a3030] hover:bg-[#8a3030] hover:text-[#f0ebe0] transition-all duration-150"
+              >
+                Forfeit & leave
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

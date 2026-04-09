@@ -343,6 +343,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
       status: { state: "playing", winner: null },
       promotionPending: null,
       gameId: null,
+      serverTime: {
+        white: 0,
+        black: 0
+      },
+      playerColor: null,
     });
   },
 }));

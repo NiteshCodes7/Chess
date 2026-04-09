@@ -11,6 +11,16 @@ export default function ChessBoard({ spectator = false }) {
   const playerColor = useGameStore((s) => s.playerColor);
   const legalMoves = useGameStore((s) => s.legalMoves);
 
+  const files = ["a", "b", "c", "d", "e", "f", "g", "h"];
+
+  function getFile(col: number) {
+    return playerColor === "black" ? files[7 - col] : files[col];
+  }
+
+  function getRank(row: number) {
+    return playerColor === "black" ? row + 1 : 8 - row;
+  }
+
   function getDisplayRow(row: number) {
     return playerColor === "black" ? 7 - row : row;
   }
@@ -45,11 +55,9 @@ export default function ChessBoard({ spectator = false }) {
             const square = board[realRow][realCol];
 
             const isDark = (r + c) % 2 === 1;
-            const isSelected =
-              selected?.row === realRow && selected?.col === realCol;
-            const legalMove = legalMoves.some(
-              (m) => m.row === realRow && m.col === realCol,
-            );
+            const coordColor = isDark ? "text-white" : "text-black";
+            const isSelected =selected?.row === realRow && selected?.col === realCol;
+            const legalMove = legalMoves.some((m) => m.row === realRow && m.col === realCol);
 
             let castlingMove = false;
             if (
@@ -105,12 +113,23 @@ export default function ChessBoard({ spectator = false }) {
                   ${captured ? "bg-red-500 border-2 border-black" : ""}
                 `}
               >
+                {/* FILE (a–h) */}
+                {r === 7 && (
+                  <span className={`absolute ${coordColor} bottom-1 right-1 text-[10px] text-black opacity-70`}>
+                    {getFile(c)}
+                  </span>
+                )}
+
+                {/* RANK (1–8) */}
+                {c === 0 && (
+                  <span className={`absolute ${coordColor} top-1 left-1 text-[10px] text-black opacity-70`}>
+                    {getRank(r)}
+                  </span>
+                )}
                 {square &&
                   (() => {
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const pieceSrc = (PIECE_SYMBOLS as any)[square.color][
-                      square.type
-                    ];
+                    const pieceSrc = (PIECE_SYMBOLS as any)[square.color][square.type];
                     return (
                       <div className="relative w-[82%] h-[82%]">
                         <Image

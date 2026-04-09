@@ -44,6 +44,7 @@ export type StateUpdatePayload = {
 
 export type ReconnectionState = {
   board: BoardState;
+  gameId: string;
   turn: "white" | "black";
   color: "white" | "black";
   time: { white: number; black: number };
