@@ -2,7 +2,8 @@
 
 import { api } from "@/lib/api";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Image from "next/image";
 
 const keyframes = `
   @keyframes fadeUp {
@@ -38,6 +39,40 @@ export default function SetUsernamePage() {
   const [username, setUsername] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!username || username.length < 3) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setIsAvailable(null);
+      setSuggestions([]);
+      return;
+    }
+
+    const delay = setTimeout(async () => {
+      try {
+        const res = await api.get(`/auth/check-username`, {
+          params: { username },
+        });
+
+        const data = res.data;
+
+        setIsAvailable(data.available);
+
+        if (!data.available) {
+          setSuggestions(data.suggestions ?? []);
+        } else {
+          setSuggestions([]);
+        }
+      } catch {
+        setIsAvailable(null);
+        setSuggestions([]);
+      }
+    }, 400);
+
+    return () => clearTimeout(delay);
+  }, [username]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -65,14 +100,16 @@ export default function SetUsernamePage() {
 
       router.push("/");
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      setError(
-        err.response?.data?.message ??
-          "Failed to set username. Try another.",
-      );
-    } finally {
-      setLoading(false);
+      const data = err.response?.data;
+
+      if (data?.suggestions) {
+        setSuggestions(data.suggestions);
+        setError("Username taken");
+      } else {
+        setError(data?.message ?? "Failed to set username");
+      }
     }
   }
 
@@ -97,26 +134,31 @@ export default function SetUsernamePage() {
       {/* Logo */}
       <div className="chess-fade-up relative z-10 mb-10 flex items-center gap-3">
         <span className="block h-px w-7 bg-[#c8a96e]" />
-        <span
-          className="text-[#c8a96e] text-[1.05rem] tracking-[0.28em] uppercase font-light"
-          style={{ fontFamily: "Georgia, serif" }}
-        >
-          Chessify
-        </span>
+        <Image
+          src={"/assets/logo_chessify.png"}
+          alt="Chessify logo"
+          width={100}
+          height={100}
+        />
         <span className="block h-px w-7 bg-[#c8a96e]" />
       </div>
 
       {/* Card */}
-      <div className="chess-fade-up relative z-10 w-full max-w-[380px] border border-[#1e1e1e] bg-[#0e0e0e] px-8 py-10">
-
+      <div className="chess-fade-up relative z-10 w-full max-w-95 border border-[#1e1e1e] bg-[#0e0e0e] px-8 py-10">
         {/* Corners */}
         <span
-          className="absolute top-0 left-0 h-[18px] w-[18px]"
-          style={{ borderTop: "2px solid #c8a96e", borderLeft: "2px solid #c8a96e" }}
+          className="absolute top-0 left-0 h-4.5 w-4.5"
+          style={{
+            borderTop: "2px solid #c8a96e",
+            borderLeft: "2px solid #c8a96e",
+          }}
         />
         <span
-          className="absolute bottom-0 right-0 h-[18px] w-[18px]"
-          style={{ borderBottom: "2px solid #c8a96e", borderRight: "2px solid #c8a96e" }}
+          className="absolute bottom-0 right-0 h-4.5 w-4.5"
+          style={{
+            borderBottom: "2px solid #c8a96e",
+            borderRight: "2px solid #c8a96e",
+          }}
         />
 
         {/* Chess piece */}
@@ -162,7 +204,11 @@ export default function SetUsernamePage() {
                 type="text"
                 placeholder="your_handle"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={(e) => {
+                  setUsername(e.target.value.toLowerCase());
+                  setSuggestions([]);
+                  setError(null);
+                }}
                 className="chess-input"
                 style={{ paddingLeft: "1.75rem" }}
               />
@@ -172,6 +218,17 @@ export default function SetUsernamePage() {
               Lowercase, no spaces. This cannot be changed easily later.
             </p>
           </div>
+          {isAvailable === true && (
+            <p className="mt-1 text-[0.65rem] text-green-500">
+              ✓ Username available
+            </p>
+          )}
+
+          {isAvailable === false && (
+            <p className="mt-1 text-[0.65rem] text-[#e08080]">
+              ✗ Username already taken
+            </p>
+          )}
 
           {/* Error */}
           {error && (
@@ -184,6 +241,41 @@ export default function SetUsernamePage() {
               }}
             >
               {error}
+            </div>
+          )}
+
+          {suggestions.length > 0 && (
+            <div
+              className="mt-3 border px-3 py-2"
+              style={{
+                background: "rgba(200,169,110,0.06)",
+                borderColor: "rgba(200,169,110,0.25)",
+              }}
+            >
+              <p className="text-[0.65rem] text-[#c8a96e] mb-1 uppercase tracking-[0.15em]">
+                Suggestions
+              </p>
+
+              <div className="flex flex-wrap gap-2">
+                {suggestions.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => {
+                      setUsername(s);
+                      setSuggestions([]);
+                      setError(null);
+                    }}
+                    className="px-2 py-1 text-[0.7rem] border"
+                    style={{
+                      borderColor: "#2a2a2a",
+                      color: "#c8a96e",
+                    }}
+                  >
+                    @{s}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 

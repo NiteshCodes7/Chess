@@ -4,6 +4,7 @@
 import { api } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import Image from "next/image"
 
 const keyframes = `
   @keyframes fadeUp {
@@ -83,7 +84,7 @@ export default function RegisterPage() {
     try {
       setLoading(true);
       await api.post("/auth/register", { email, name, password });
-      router.push("/auth/set-username");
+      router.push(`/auth/verify-otp?email=${email}`);
     } catch (err: any) {
       setError(
         err.response?.data?.message ?? "Registration failed. Please try again.",
@@ -117,24 +118,24 @@ export default function RegisterPage() {
         style={{ animationDelay: "0s" }}
       >
         <span className="block h-px w-7 bg-[#c8a96e]" />
-        <span
-          className="text-[#c8a96e] text-[1.05rem] tracking-[0.28em] uppercase font-light"
-          style={{ fontFamily: "Georgia, serif" }}
-        >
-          Chessify
-        </span>
+        <Image 
+          src={"/assets/logo_chessify.png"} 
+          alt="Chessify logo" 
+          width={100} 
+          height={100} 
+        />
         <span className="block h-px w-7 bg-[#c8a96e]" />
       </div>
 
       {/* Card */}
       <div
-        className="chess-fade-up relative z-10 w-full max-w-[380px] border border-[#1e1e1e] bg-[#0e0e0e] px-8 py-10"
+        className="chess-fade-up relative z-10 w-full max-w-95 border border-[#1e1e1e] bg-[#0e0e0e] px-8 py-10"
         style={{ animationDelay: "0.1s" }}
       >
         {/* Corner brackets */}
         <span
           aria-hidden="true"
-          className="absolute top-0 left-0 h-[18px] w-[18px]"
+          className="absolute top-0 left-0 h-4.5 w-4.5"
           style={{
             borderTop: "2px solid #c8a96e",
             borderLeft: "2px solid #c8a96e",
@@ -142,7 +143,7 @@ export default function RegisterPage() {
         />
         <span
           aria-hidden="true"
-          className="absolute bottom-0 right-0 h-[18px] w-[18px]"
+          className="absolute bottom-0 right-0 h-4.5 w-4.5"
           style={{
             borderBottom: "2px solid #c8a96e",
             borderRight: "2px solid #c8a96e",

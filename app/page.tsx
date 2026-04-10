@@ -6,6 +6,7 @@ import { useEffect, useState, useRef } from "react";
 import { getSocket } from "@/lib/socket";
 import { useGameStore } from "@/store/useGameStore";
 import { ReconnectionState } from "@/types/socket";
+import Image from "next/image";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -195,16 +196,17 @@ export default function LandingPage() {
 
       {/* ── NAV ── */}
       <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 md:px-12 py-5 bg-gradient-to-b from-[#0a0a0a] via-[#0a0a0a]/80 to-transparent">
-        <span
-          className="text-[#c8a96e] text-xl tracking-widest uppercase font-light"
-          style={{ fontFamily: "Georgia, serif" }}
-        >
-          Chessify
-        </span>
+        <Image
+          src={"/assets/logo_chessify.png"}
+          alt="♔ Chessify"
+          width={100}
+          height={100}
+        />
+          
         <ul className="hidden md:flex gap-8 list-none m-0 p-0">
           {[
             { label: "Friends", href: "/friends" },
-            { label: "Profile", href: "/profile" },
+            { label: "Profile", href: "/auth/profile" },
             { label: "Replay", href: "/replay" },
             ...(!authed ? [{ label: "Sign in", href: "/auth/login" }] : []),
           ].map((l) => (

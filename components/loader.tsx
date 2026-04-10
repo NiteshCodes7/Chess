@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
 const facts = [
@@ -66,12 +67,13 @@ export default function ChessLoader() {
       />
 
       {/* Top logo */}
-      <div
-        className="absolute top-8 left-1/2 -translate-x-1/2 text-[#c8a96e] text-base tracking-widest uppercase font-light opacity-40"
-        style={{ fontFamily: "Georgia, serif" }}
-      >
-        Chessify
-      </div>
+      <Image
+        src={"/assets/logo_chessify.png"}
+        alt="Chessify logo"
+        width={100}
+        height={100}
+        className="absolute top-8 left-1/2 -translate-x-1/2"
+      />
 
       {/* Loader visual */}
       <div className="relative w-28 h-28 flex items-center justify-center mb-12">
@@ -141,7 +143,7 @@ export default function ChessLoader() {
       <div className="max-w-xs text-center min-h-15 flex items-center justify-center">
         <p
           key={factIndex}
-          className={`text-[#555] text-sm font-light leading-relaxed ${visible ? "fact-enter" : "fact-exit"}`}
+          className={`text-[#7b7b7b] text-sm font-light leading-relaxed ${visible ? "fact-enter" : "fact-exit"}`}
           style={{ fontFamily: "Georgia, serif", fontStyle: "italic" }}
         >
           &quot;{facts[factIndex]}&quot;

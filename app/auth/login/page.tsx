@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthProvider";
 import { api, setAccessToken } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import Image from "next/image";
 
 /* ─── Keyframes injected once ─── */
 const styles = `
@@ -218,18 +219,12 @@ export default function LoginPage() {
             background: "#c8a96e",
           }}
         />
-        <span
-          style={{
-            fontFamily: "Georgia, serif",
-            color: "#c8a96e",
-            fontSize: "1.05rem",
-            letterSpacing: "0.28em",
-            textTransform: "uppercase",
-            fontWeight: 400,
-          }}
-        >
-          Chessify
-        </span>
+        <Image 
+          src={"/assets/logo_chessify.png"} 
+          alt="Chessify logo" 
+          width={100} 
+          height={100} 
+        />
         <span
           style={{
             display: "block",
