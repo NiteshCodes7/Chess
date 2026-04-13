@@ -5,6 +5,7 @@ import { getSocket } from "@/lib/socket";
 import { useToast } from "@/store/useToast";
 import { formatLastSeen } from "@/lib/lastSeen";
 import Image from "next/image";
+import { api } from "@/lib/api";
 
 type Friend = {
   id: string;
@@ -18,10 +19,13 @@ type Friend = {
 type Props = {
   friend: Friend;
   onClick: () => void;
+  onUnfriend?: (friendId: string) => void;
 };
 
-export default function FriendItem({ friend, onClick }: Props) {
+export default function FriendItem({ friend, onClick, onUnfriend }: Props) {
   const [inviting, setInviting] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [unfriending, setUnfriending] = useState(false);
   const { addToast } = useToast();
 
   const STATUS_COLORS = {
@@ -29,6 +33,28 @@ export default function FriendItem({ friend, onClick }: Props) {
     playing: "#c8a96e",
     offline: "#2a2a2a",
   };
+
+  async function handleUnfriend(e: React.MouseEvent) {
+    e.stopPropagation();
+
+    if (!confirming) {
+      setConfirming(true);
+      setTimeout(() => setConfirming(false), 3000);
+      return;
+    }
+
+    setUnfriending(true);
+    try {
+      await api.delete(`/friends/${friend.id}`);
+      addToast(`Unfriended ${friend.name}`, "info", 50, 50);
+      onUnfriend?.(friend.id);
+    } catch {
+      addToast("Failed to unfriend", "error");
+    } finally {
+      setUnfriending(false);
+      setConfirming(false);
+    }
+  }
 
   function sendInvite(e: React.MouseEvent) {
     e.stopPropagation();
@@ -88,9 +114,8 @@ export default function FriendItem({ friend, onClick }: Props) {
         <div className="relative shrink-0">
           <div className="w-7 h-7 border border-[#1a1a1a] bg-[#111] flex items-center justify-center">
             {friend.avatar ? (
-              // eslint-disable-next-line @next/next/no-img-element
               <Image
-                src={friend.avatar}
+                src={friend.avatar || "/assets/default-logo.png"}
                 alt={friend.name}
                 width={100}
                 height={100}
@@ -175,6 +200,57 @@ export default function FriendItem({ friend, onClick }: Props) {
             )}
           </button>
         )}
+
+        <button
+          onClick={handleUnfriend}
+          disabled={unfriending}
+          title={confirming ? "Click again to confirm" : "Unfriend"}
+          className="shrink-0 w-6 h-6 border flex items-center justify-center transition-all duration-150 disabled:opacity-40"
+          style={{
+            borderColor: confirming ? "#8a3030" : "#1e1e1e",
+            color: confirming ? "#c06060" : "#555",
+          }}
+          onMouseEnter={(e) => {
+            if (!unfriending) {
+              (e.currentTarget as HTMLButtonElement).style.borderColor =
+                "#8a3030";
+              (e.currentTarget as HTMLButtonElement).style.color = "#c06060";
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!confirming) {
+              (e.currentTarget as HTMLButtonElement).style.borderColor =
+                "#1e1e1e";
+              (e.currentTarget as HTMLButtonElement).style.color = "#555";
+            }
+          }}
+        >
+          {unfriending ? (
+            <div className="w-2.5 h-2.5 rounded-full border border-[#8a3030]/30 border-t-[#8a3030] animate-spin" />
+          ) : confirming ? (
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className="w-3 h-3"
+            >
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          ) : (
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              className="w-3 h-3"
+            >
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <line x1="23" y1="11" x2="17" y2="11" />
+            </svg>
+          )}
+        </button>
       </div>
     </button>
   );

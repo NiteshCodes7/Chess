@@ -1,9 +1,10 @@
 "use client";
 
 import ChessBoard from "@/app/components/chess/ChessBoard";
+import { api } from "@/lib/api";
 import { initialBoard } from "@/lib/initialBoard";
 import { useGameStore } from "@/store/useGameStore";
-import axios from "axios";
+import { useRouter } from "next/navigation";
 import React, { use, useEffect, useState } from "react";
 
 type Move = {
@@ -15,6 +16,7 @@ type Move = {
 
 const ReplayPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
   const { gameId } = use(params);
+  const router = useRouter();
 
   const [moves, setMoves] = useState<Move[]>([]);
   const [index, setIndex] = useState(0);
@@ -28,9 +30,7 @@ const ReplayPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
     const fetchGame = async () => {
       setLoading(true);
       resetGame();
-      const res = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL!}/game/${gameId}`,
-      );
+      const res = await api.get(`/game/${gameId}`);
       setMoves(res.data.moves);
       setIndex(0);
       setLoading(false);
@@ -73,6 +73,32 @@ const ReplayPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
         }}
       />
 
+      {/* Back Button */}
+      <div
+        className="relative z-10 w-full max-w-126 animate-fade-up"
+        style={{ animationDelay: "0.02s" }}
+      >
+        <button
+          onClick={() => router.back()}
+          className="group flex items-center gap-2 text-[#8b8578] hover:text-[#c8a96e] transition-colors duration-150"
+          title="Go back"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            className="w-4 h-4"
+          >
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+
+          <span className="text-xs tracking-[0.18em] uppercase font-light">
+            Back
+          </span>
+        </button>
+      </div>
+
       {/* Header */}
       <div className="relative z-10 flex flex-col items-center gap-2 animate-fade-up">
         <div className="flex items-center gap-3">
@@ -83,7 +109,7 @@ const ReplayPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
           <span className="block w-8 h-px bg-[#c8a96e] opacity-40" />
         </div>
         <p
-          className="text-[#333] text-xs tracking-[0.15em] font-light"
+          className="text-[#7a7468] text-xs tracking-[0.15em] font-light"
           style={{ fontFamily: "Georgia, serif" }}
         >
           {loading ? "Loading moves…" : `${moves.length} moves`}
@@ -103,7 +129,7 @@ const ReplayPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
         className="relative z-10 flex items-center gap-3 animate-fade-up"
         style={{ animationDelay: "0.15s" }}
       >
-        <span className="text-[#333] text-xs font-light tracking-widest">
+        <span className="text-[#8b8578] text-xs font-light tracking-widest">
           Move
         </span>
         <span
@@ -112,8 +138,8 @@ const ReplayPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
         >
           {index}
         </span>
-        <span className="text-[#2a2a2a] text-xs">/</span>
-        <span className="text-[#333] text-xs font-light tabular-nums">
+        <span className="text-[#666056] text-xs">/</span>
+        <span className="text-[#8b8578] text-xs font-light tabular-nums">
           {moves.length}
         </span>
       </div>
@@ -150,7 +176,7 @@ const ReplayPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
           title="Reset"
         >
           <svg
-            className="w-4 h-4 text-[#555] group-hover:text-[#c8a96e] transition-colors"
+            className="w-4 h-4 text-[#b2aa9b] group-hover:text-[#c8a96e] transition-colors"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -169,7 +195,7 @@ const ReplayPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
           title="Previous move"
         >
           <svg
-            className="w-4 h-4 text-[#555] group-hover:text-[#c8a96e] transition-colors"
+            className="w-4 h-4 text-[#8b8578] group-hover:text-[#c8a96e] transition-colors"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -182,7 +208,7 @@ const ReplayPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
         {/* Move number display */}
         <div className="flex items-center justify-center w-16 h-12 border-r border-[#1a1a1a]">
           <span
-            className="text-[#555] text-xs tabular-nums"
+            className="text-[#8b8578] text-xs tabular-nums"
             style={{ fontFamily: "Georgia, serif" }}
           >
             {index}/{moves.length}
@@ -197,7 +223,7 @@ const ReplayPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
           title="Next move"
         >
           <svg
-            className="w-4 h-4 text-[#555] group-hover:text-[#c8a96e] transition-colors"
+            className="w-4 h-4 text-[#8b8578] group-hover:text-[#c8a96e] transition-colors"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -215,7 +241,7 @@ const ReplayPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
           title="Jump to end"
         >
           <svg
-            className="w-4 h-4 text-[#555] group-hover:text-[#c8a96e] transition-colors"
+            className="w-4 h-4 text-[#8b8578] group-hover:text-[#c8a96e] transition-colors"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -229,7 +255,7 @@ const ReplayPage = ({ params }: { params: Promise<{ gameId: string }> }) => {
 
       {/* Keyboard hint */}
       <p
-        className="relative z-10 text-[#2a2a2a] text-xs font-light tracking-widest animate-fade-up"
+        className="relative z-10 text-[#6f6a60] text-xs font-light tracking-widest animate-fade-up"
         style={{ animationDelay: "0.3s" }}
       >
         Use ← → arrow keys to navigate

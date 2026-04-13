@@ -43,6 +43,10 @@ export default function FriendsSidebar({ onSelect }: FriendsSidebarProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const socket = getPresenceSocket();
 
+  function handleUnfriend(friendId: string) {
+    setFriends((prev) => prev.filter((f) => f.id !== friendId));
+  }
+
   function groupFriends(list: Friend[]): GroupedFriends {
     return {
       online: list.filter((f) => f.status === "online"),
@@ -208,6 +212,7 @@ export default function FriendsSidebar({ onSelect }: FriendsSidebarProps) {
                       key={friend.id}
                       friend={friend}
                       onClick={() => onSelect(friend)}
+                      onUnfriend={handleUnfriend}
                     />
                   ))}
                 </div>
