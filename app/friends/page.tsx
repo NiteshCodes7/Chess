@@ -13,6 +13,9 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import Link from "next/link";
+import { api, setAccessToken } from "@/lib/api";
+import { useAuth } from "@/context/AuthProvider";
+import { useRouter } from "next/navigation";
 
 type Tab = "chat" | "requests" | "add";
 
@@ -20,6 +23,8 @@ export default function FriendsPage() {
   const [selectedFriend, setSelectedFriend] = useState<Friend | null>(null);
   const [tab, setTab] = useState<Tab>("chat");
   const [open, setOpen] = useState(false);
+  const { setAuthed } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
     const media = window.matchMedia("(min-width: 768px)");
@@ -29,6 +34,16 @@ export default function FriendsPage() {
     media.addEventListener("change", handler);
     return () => media.removeEventListener("change", handler);
   }, []);
+
+  async function logout() {
+    try {
+      await api.post("/auth/logout");
+    } catch {}
+    localStorage.removeItem("wsToken");
+    setAccessToken(null);
+    setAuthed(false);
+    router.push("/auth/login");
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#0a0a0a] text-[#e8e0d0]">
@@ -50,7 +65,7 @@ export default function FriendsPage() {
       `}</style>
 
       {/* ── COLUMN 1: Icon rail ── */}
-      <nav className="hidden md:flex flex-col items-center gap-3 w-16 py-4 bg-[#060606] border-r border-[#0f0f0f] shrink-0">
+      <nav className="hidden md:flex flex-col items-center w-16 py-4 bg-[#060606] border-r border-[#0f0f0f] shrink-0">
         {/* Logo */}
         <Link
           href="/"
@@ -65,85 +80,113 @@ export default function FriendsPage() {
           </span>
         </Link>
 
-        <div className="w-5 h-px bg-[#161616]" />
+        <div className="w-5 h-px bg-[#161616] mb-2" />
 
-        {[
-          {
-            href: "/play",
-            title: "Play",
-            icon: (
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                className="w-5 h-5"
-              >
-                <polygon points="5 3 19 12 5 21 5 3" />
-              </svg>
-            ),
-          },
-          {
-            href: "/friends",
-            title: "Friends",
-            active: true,
-            icon: (
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                className="w-5 h-5"
-              >
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-              </svg>
-            ),
-          },
-          {
-            href: "/replay",
-            title: "Replay",
-            icon: (
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                className="w-5 h-5"
-              >
-                <polyline points="1 4 1 10 7 10" />
-                <path d="M3.51 15a9 9 0 1 0 .49-5.49" />
-              </svg>
-            ),
-          },
-          {
-            href: "/profile",
-            title: "Profile",
-            icon: (
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                className="w-5 h-5"
-              >
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
-            ),
-          },
-        ].map((item) => (
-          <a
-            key={item.title}
-            href={item.href}
-            title={item.title}
-            className={`relative w-10 h-10 flex items-center justify-center transition-all duration-150 ${item.active ? "text-[#c8a96e]" : "text-[#333] hover:text-[#666]"}`}
+        {/* Main Nav */}
+        <div className="flex flex-col items-center gap-3">
+          {[
+            {
+              href: "/play",
+              title: "Play",
+              icon: (
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  className="w-5 h-5"
+                >
+                  <polygon points="5 3 19 12 5 21 5 3" />
+                </svg>
+              ),
+            },
+            {
+              href: "/friends",
+              title: "Friends",
+              active: true,
+              icon: (
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  className="w-5 h-5"
+                >
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+              ),
+            },
+            {
+              href: "/replay",
+              title: "Replay",
+              icon: (
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  className="w-5 h-5"
+                >
+                  <polyline points="1 4 1 10 7 10" />
+                  <path d="M3.51 15a9 9 0 1 0 .49-5.49" />
+                </svg>
+              ),
+            },
+            {
+              href: "/profile",
+              title: "Profile",
+              icon: (
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  className="w-5 h-5"
+                >
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+              ),
+            },
+          ].map((item) => (
+            <a
+              key={item.title}
+              href={item.href}
+              title={item.title}
+              className={`relative w-10 h-10 flex items-center justify-center transition-all duration-150 ${
+                item.active ? "text-[#c8a96e]" : "text-[#6a6a6a] hover:text-[#d0c8b8]"
+              }`}
+            >
+              {item.active && (
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-[#c8a96e]" />
+              )}
+              {item.icon}
+            </a>
+          ))}
+        </div>
+
+        <div className="flex-1 text-[#6c6868]" />
+
+        <div className="w-5 h-px bg-[#161616] mb-3" />
+
+        {/* Logout Button */}
+        <button
+          onClick={logout}
+          title="Logout"
+          className="relative w-10 h-10 flex items-center justify-center text-[#883f3f] hover:text-[#df2c2c] transition-all duration-150"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            className="w-5 h-5"
           >
-            {item.active && (
-              <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-[#c8a96e]" />
-            )}
-            {item.icon}
-          </a>
-        ))}
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+        </button>
       </nav>
 
       {/* ── COLUMN 2: Friends panel ── */}
@@ -164,8 +207,8 @@ export default function FriendsPage() {
               <button
                 key={t.key}
                 onClick={() => {
-                  setTab(t.key)
-                  if(t.key !== "chat") setSelectedFriend(null);
+                  setTab(t.key);
+                  if (t.key !== "chat") setSelectedFriend(null);
                 }}
                 className={`flex-1 pb-2 text-xs tracking-widest uppercase font-light border-b-2 transition-all duration-150 -mb-px ${
                   tab === t.key
@@ -308,7 +351,12 @@ export default function FriendsPage() {
             ) : (
               <div className="h-full flex flex-col items-center justify-center gap-5 slide-up">
                 <div className="w-16 h-16 border border-[#6e6d6d] bg-[#080808] flex items-center justify-center">
-                  <span className="select-none text-3xl" style={{ color: "#878383", opacity: 0.4 }}>♛</span>
+                  <span
+                    className="select-none text-3xl"
+                    style={{ color: "#878383", opacity: 0.4 }}
+                  >
+                    ♛
+                  </span>
                 </div>
                 <div className="text-center">
                   <div className="flex items-center gap-3 justify-center mb-1.5">
@@ -322,7 +370,7 @@ export default function FriendsPage() {
                     </span>
                     <span className="block w-5 h-px bg-[#878383]" />
                   </div>
-                  <p className="text-[#161616] text-xs font-light">
+                  <p className="text-[#777575] text-xs font-light">
                     {tab === "chat"
                       ? "Select a friend from the left"
                       : "Use the panel on the left"}

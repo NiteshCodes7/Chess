@@ -3,11 +3,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useAuth } from "@/context/AuthProvider";
 import { api, setAccessToken } from "@/lib/api";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
+import { useToast } from "@/store/useToast";
+import GoogleButton from "@/components/GoogleButton";
 
-/* ─── Keyframes injected once ─── */
+/* ─── Keyframes ─── */
 const styles = `
   @keyframes fadeUp {
     from { opacity: 0; transform: translateY(20px); }
@@ -20,55 +23,26 @@ const styles = `
   .chess-fade-up { animation: fadeUp 0.7s ease both; }
   .chess-piece-deco { animation: piecePulse 4s ease-in-out infinite; }
   .chess-input {
-    width: 100%;
-    background: #0a0a0a;
-    border: 1px solid #1e1e1e;
-    color: #e8e0d0;
-    font-size: 0.85rem;
-    padding: 0.75rem 0.9rem;
-    outline: none;
-    font-family: inherit;
-    font-weight: 300;
-    transition: border-color 0.2s;
-    -webkit-appearance: none;
-    border-radius: 0;
+    width: 100%; background: #0a0a0a; border: 1px solid #1e1e1e;
+    color: #e8e0d0; font-size: 0.85rem; padding: 0.75rem 0.9rem;
+    outline: none; font-family: inherit; font-weight: 300;
+    transition: border-color 0.2s; -webkit-appearance: none; border-radius: 0;
   }
   .chess-input::placeholder { color: #2e2e2e; }
   .chess-input:focus        { border-color: #c8a96e; }
   .chess-btn-primary {
-    width: 100%;
-    background: #c8a96e;
-    color: #0a0a0a;
-    border: none;
-    padding: 0.85rem 1rem;
-    font-size: 0.7rem;
-    font-weight: 500;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    cursor: pointer;
+    width: 100%; background: #c8a96e; color: #0a0a0a; border: none;
+    padding: 0.85rem 1rem; font-size: 0.7rem; font-weight: 500;
+    letter-spacing: 0.18em; text-transform: uppercase; cursor: pointer;
     font-family: inherit;
     clip-path: polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px));
     transition: background 0.2s, transform 0.15s;
   }
-  .chess-btn-primary:hover:not(:disabled)  { background: #d4ba80; transform: translateY(-1px); }
+  .chess-btn-primary:hover:not(:disabled) { background: #d4ba80; transform: translateY(-1px); }
   .chess-btn-primary:active:not(:disabled) { transform: translateY(0); }
   .chess-btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
-  .chess-link-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-family: inherit;
-    color: #c8a96e;
-    font-size: 0.75rem;
-    text-decoration: underline;
-    text-underline-offset: 3px;
-    padding: 0;
-    transition: color 0.2s;
-  }
-  .chess-link-btn:hover { color: #d4ba80; }
 `;
 
-/* ─── Sub-components ─── */
 function BgGrid() {
   return (
     <div
@@ -90,38 +64,6 @@ function BgGrid() {
   );
 }
 
-function Eyebrow({ text }: { text: string }) {
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "0.6rem",
-        marginBottom: "1.1rem",
-      }}
-    >
-      <span
-        style={{
-          display: "block",
-          width: 20,
-          height: 1,
-          background: "#c8a96e",
-        }}
-      />
-      <span
-        style={{
-          color: "#c8a96e",
-          fontSize: "0.63rem",
-          letterSpacing: "0.22em",
-          textTransform: "uppercase",
-        }}
-      >
-        {text}
-      </span>
-    </div>
-  );
-}
-
 function FieldLabel({
   htmlFor,
   children,
@@ -134,7 +76,7 @@ function FieldLabel({
       htmlFor={htmlFor}
       style={{
         display: "block",
-        color: "#555",
+        color: "#878383",
         fontSize: "0.63rem",
         letterSpacing: "0.18em",
         textTransform: "uppercase",
@@ -146,15 +88,24 @@ function FieldLabel({
   );
 }
 
-/* ─── Main page ─── */
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect") ?? "/";
   const { setAuthed } = useAuth();
+  const { addToast } = useToast();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("reset") === "success") {
+      addToast("Password reset successfully. Please sign in.", "success");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -169,13 +120,16 @@ export default function LoginPage() {
       setLoading(true);
       const { data } = await api.post("/auth/login", { email, password });
       setAccessToken(data.accessToken);
-      if (data.wsToken) localStorage.setItem("wsToken", data.wsToken);
+      localStorage.setItem("wsToken", data.wsToken);
       setAuthed(true);
-      router.push("/");
+      router.push(redirect);
     } catch (err: any) {
-      setError(
-        err.response?.data?.message ?? "Login failed. Please try again.",
-      );
+      const msg = err.response?.data?.message ?? "";
+      if (msg === "EMAIL_NOT_VERIFIED") {
+        router.push(`/auth/verify-otp?email=${encodeURIComponent(email)}`);
+        return;
+      }
+      setError(msg || "Login failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -197,7 +151,6 @@ export default function LoginPage() {
       }}
     >
       <style>{styles}</style>
-
       <BgGrid />
 
       {/* Logo */}
@@ -208,7 +161,6 @@ export default function LoginPage() {
           alignItems: "center",
           gap: "0.75rem",
           marginBottom: "2.5rem",
-          animationDelay: "0s",
         }}
       >
         <span
@@ -219,11 +171,11 @@ export default function LoginPage() {
             background: "#c8a96e",
           }}
         />
-        <Image 
-          src={"/assets/logo_chessify.png"} 
-          alt="Chessify logo" 
-          width={100} 
-          height={100} 
+        <Image
+          src="/assets/logo_chessify.png"
+          alt="Chessify"
+          width={100}
+          height={100}
         />
         <span
           style={{
@@ -291,7 +243,34 @@ export default function LoginPage() {
           ♚
         </span>
 
-        <Eyebrow text="Welcome back" />
+        {/* Eyebrow */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.6rem",
+            marginBottom: "1.1rem",
+          }}
+        >
+          <span
+            style={{
+              display: "block",
+              width: 20,
+              height: 1,
+              background: "#c8a96e",
+            }}
+          />
+          <span
+            style={{
+              color: "#c8a96e",
+              fontSize: "0.63rem",
+              letterSpacing: "0.22em",
+              textTransform: "uppercase",
+            }}
+          >
+            Welcome back
+          </span>
+        </div>
 
         <h1
           style={{
@@ -307,7 +286,6 @@ export default function LoginPage() {
           <br />
           <em style={{ fontStyle: "italic", color: "#c8a96e" }}>your game.</em>
         </h1>
-
         <p
           style={{
             color: "#555",
@@ -320,8 +298,34 @@ export default function LoginPage() {
           Continue where you left off.
         </p>
 
+        {/* ── Google OAuth ── */}
+        <GoogleButton redirectTo={redirect} label="Continue with Google" />
+
+        {/* Divider */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.75rem",
+            margin: "1.25rem 0",
+          }}
+        >
+          <span style={{ flex: 1, height: 1, background: "#555" }} />
+          <span
+            style={{
+              color: "#555",
+              fontSize: "0.63rem",
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+            }}
+          >
+            or sign in with email
+          </span>
+          <span style={{ flex: 1, height: 1, background: "#555" }} />
+        </div>
+
+        {/* Email / password form */}
         <form onSubmit={handleSubmit} noValidate>
-          {/* Email */}
           <div style={{ marginBottom: "1rem" }}>
             <FieldLabel htmlFor="email">Email</FieldLabel>
             <input
@@ -336,7 +340,6 @@ export default function LoginPage() {
             />
           </div>
 
-          {/* Password */}
           <div style={{ marginBottom: "0.25rem" }}>
             <FieldLabel htmlFor="password">Password</FieldLabel>
             <input
@@ -351,7 +354,6 @@ export default function LoginPage() {
             />
           </div>
 
-          {/* Error */}
           {error && (
             <div
               role="alert"
@@ -370,7 +372,6 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* Submit */}
           <button
             type="submit"
             disabled={loading}
@@ -381,41 +382,26 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* Divider */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "0.75rem",
-            margin: "1.25rem 0",
-          }}
-        >
-          <span style={{ flex: 1, height: 1, background: "#1a1a1a" }} />
-          <span
-            style={{
-              color: "#2e2e2e",
-              fontSize: "0.63rem",
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-            }}
-          >
-            or
-          </span>
-          <span style={{ flex: 1, height: 1, background: "#1a1a1a" }} />
-        </div>
+        {/* Footer links */}
+        <div className="flex flex-col items-center gap-3 text-center mt-6">
+          <div className="text-[#666] text-xs font-light tracking-wide">
+            Don&apos;t have an account?{" "}
+            <button
+              onClick={() => router.push("/auth/register")}
+              className="text-[#c8a96e] text-sm font-light hover:text-[#f5ddb0] transition-colors duration-200 cursor-pointer bg-transparent border-none"
+            >
+              Create One
+            </button>
+          </div>
 
-        {/* Register link */}
-        <div style={{ textAlign: "center" }}>
-          <span style={{ color: "#444", fontSize: "0.75rem", fontWeight: 300 }}>
-            Don&apos;t have an account?
-          </span>
-          <button
-            className="chess-link-btn"
-            onClick={() => router.push("/auth/register")}
-            style={{ marginLeft: "0.3rem" }}
+          <div className="w-16 h-px bg-[#1f1f1f]" />
+
+          <Link
+            href="/auth/forgot-password"
+            className="text-[#666] text-xs font-light tracking-wide hover:text-[#c8a96e] transition-colors duration-200"
           >
-            Create one
-          </button>
+            Forgot Password?
+          </Link>
         </div>
       </div>
     </div>

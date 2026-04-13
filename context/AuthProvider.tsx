@@ -28,6 +28,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setAuthed(true);
       } catch {
         setAuthed(false);
+        if (typeof window !== "undefined") {
+          const isPublic = [
+            "/",
+            "/auth/login",
+            "/auth/register",
+            "/auth/verify-otp",
+            "/auth/forgot-password",
+          ].some((r) => window.location.pathname.startsWith(r));
+          if (!isPublic) {
+            window.location.href = "/auth/login";
+          }
+        }
       } finally {
         setLoading(false);
       }
@@ -59,7 +71,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .getState()
         .addToast(
           `⛔ ${reason}. You are banned from matchmaking for ${timeStr}.`,
-          "error", 50, 50
+          "error",
+          50,
+          50,
         );
     };
 

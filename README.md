@@ -7,6 +7,61 @@ A production-ready real-time chess frontend built with **Next.js**, **Zustand**,
 
 ## 🚀 Features (Completed)
 
+## Authentication & User Profiles
+  LOGIN
+  User submits email/password
+  → backend validates
+  → issues all 4 tokens
+  → refreshToken + sessionToken → set as httpOnly cookies
+  → accessToken + wsToken → sent in response body
+  → frontend stores accessToken in memory, wsToken in localStorage
+
+  ─────────────────────────────────────────
+
+  PAGE LOAD / REFRESH
+  Browser loads → accessToken is gone (was in memory)
+  → AuthProvider calls /auth/refresh
+  → browser auto-sends refreshToken cookie
+  → backend validates, issues new accessToken + wsToken
+  → frontend stores them again
+  → sockets connect using wsToken
+
+  ─────────────────────────────────────────
+
+  NORMAL API CALL
+  Frontend adds: Authorization: Bearer <accessToken>
+  → backend verifies, handles request
+
+  ─────────────────────────────────────────
+
+  ACCESS TOKEN EXPIRES (10 min)
+  API call returns 401
+  → axios interceptor catches it
+  → calls /auth/refresh automatically
+  → gets new accessToken
+  → retries the original request
+  → user notices nothing
+
+  ─────────────────────────────────────────
+
+  PAGE NAVIGATION
+  Browser navigates to /friends
+  → Next.js middleware runs
+  → reads sessionToken cookie
+  → verifies JWT locally (no DB call, ~1ms)
+  → valid → page loads
+  → invalid/missing → redirect to /login
+
+  ─────────────────────────────────────────
+
+  LOGOUT
+  → /auth/logout called
+  → backend deletes refreshToken from DB
+  → clears refreshToken + sessionToken cookies
+  → frontend clears accessToken from memory
+  → clears wsToken from localStorage
+  → redirect to /login
+
 ### 🎮 Chess Mechanics
 - Full chess piece movement logic
 - Legal move validation

@@ -4,7 +4,8 @@
 import { api } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import Image from "next/image"
+import Image from "next/image";
+import GoogleButton from "@/components/GoogleButton";
 
 const keyframes = `
   @keyframes fadeUp {
@@ -34,6 +35,10 @@ const keyframes = `
   .chess-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 `;
 
+function hasSpecialCharacter(str: string): boolean {
+  return /[!@#$%^&*()_+\-=[\]{}|;:'",.<>?/`~]/.test(str);
+}
+
 export default function RegisterPage() {
   const router = useRouter();
 
@@ -42,17 +47,6 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-
-  function hasSpecialCharacter(str: string): boolean {
-    const specialChars = "!@#$%^&*()_+-=[]{}|;:'\",.<>?/`~";
-
-    for (const char of str) {
-      if (specialChars.includes(char)) {
-        return true;
-      }
-    }
-    return false;
-  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -63,18 +57,19 @@ export default function RegisterPage() {
       return;
     }
     if (name.length < 2) {
-      setError("Username must be at least 2 characters.");
+      setError("Name must be at least 2 characters.");
       return;
     }
     if (!/^[a-zA-Z ]+$/.test(name)) {
-      setError("Username can only contain letters.");
+      setError("Name can only contain letters.");
       return;
     }
+
     const hasUppercase = [...password].some((c) => c >= "A" && c <= "Z");
     const hasNumber = [...password].some((c) => c >= "0" && c <= "9");
-    const hasSpecialChar = hasSpecialCharacter(password);
+    const hasSpecial = hasSpecialCharacter(password);
 
-    if (password.length < 8 || !hasUppercase || !hasNumber || !hasSpecialChar) {
+    if (password.length < 8 || !hasUppercase || !hasNumber || !hasSpecial) {
       setError(
         "Password must include:\n• At least 8 characters\n• 1 uppercase letter\n• 1 number\n• 1 special character",
       );
@@ -84,7 +79,7 @@ export default function RegisterPage() {
     try {
       setLoading(true);
       await api.post("/auth/register", { email, name, password });
-      router.push(`/auth/verify-otp?email=${email}`);
+      router.push(`/auth/verify-otp?email=${encodeURIComponent(email)}`);
     } catch (err: any) {
       setError(
         err.response?.data?.message ?? "Registration failed. Please try again.",
@@ -118,11 +113,11 @@ export default function RegisterPage() {
         style={{ animationDelay: "0s" }}
       >
         <span className="block h-px w-7 bg-[#c8a96e]" />
-        <Image 
-          src={"/assets/logo_chessify.png"} 
-          alt="Chessify logo" 
-          width={100} 
-          height={100} 
+        <Image
+          src="/assets/logo_chessify.png"
+          alt="Chessify"
+          width={100}
+          height={100}
         />
         <span className="block h-px w-7 bg-[#c8a96e]" />
       </div>
@@ -166,7 +161,6 @@ export default function RegisterPage() {
           </span>
         </div>
 
-        {/* Heading */}
         <h1
           className="mb-2 text-[1.9rem] font-light leading-[1.15] text-[#f0ebe0]"
           style={{ fontFamily: "Georgia, serif" }}
@@ -175,16 +169,28 @@ export default function RegisterPage() {
           <br />
           <em className="italic text-[#c8a96e]">board.</em>
         </h1>
-
-        <p className="mb-8 text-[0.8rem] font-light leading-relaxed text-[#555]">
+        <p className="mb-6 text-[0.8rem] font-light leading-relaxed text-[#555]">
           Create your free account and start playing.
         </p>
 
+        {/* ── Google OAuth ── */}
+        <GoogleButton label="Sign up with Google" />
+
+        {/* Divider */}
+        <div className="my-5 flex items-center gap-3">
+          <span className="h-px flex-1 bg-[#555]" />
+          <span className="text-[0.63rem] tracking-[0.12em] uppercase text-[#555]">
+            or sign up with email
+          </span>
+          <span className="h-px flex-1 bg-[#555]" />
+        </div>
+
+        {/* Email form */}
         <form onSubmit={onSubmit} noValidate>
           {/* Name */}
           <div className="mb-4">
             <label
-              htmlFor="username"
+              htmlFor="name"
               className="mb-[0.45rem] block text-[0.63rem] tracking-[0.18em] uppercase text-[#555]"
             >
               Full Name
@@ -198,7 +204,6 @@ export default function RegisterPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="chess-input"
-              style={{ paddingLeft: "0.9rem" }}
             />
           </div>
 
@@ -242,11 +247,10 @@ export default function RegisterPage() {
             />
           </div>
 
-          {/* Error */}
           {error && (
             <div
               role="alert"
-              className="mt-3 border px-3 py-[0.6rem] text-[0.75rem] font-light tracking-[0.02em]"
+              className="mt-3 border px-3 py-[0.6rem] text-[0.75rem] font-light tracking-[0.02em] whitespace-pre-line"
               style={{
                 background: "rgba(200,60,60,0.08)",
                 borderColor: "rgba(200,60,60,0.25)",
@@ -257,7 +261,6 @@ export default function RegisterPage() {
             </div>
           )}
 
-          {/* Submit */}
           <button
             type="submit"
             disabled={loading}
@@ -267,17 +270,8 @@ export default function RegisterPage() {
           </button>
         </form>
 
-        {/* Divider */}
-        <div className="my-5 flex items-center gap-3">
-          <span className="h-px flex-1 bg-[#1a1a1a]" />
-          <span className="text-[0.63rem] tracking-[0.12em] uppercase text-[#2e2e2e]">
-            or
-          </span>
-          <span className="h-px flex-1 bg-[#1a1a1a]" />
-        </div>
-
         {/* Login link */}
-        <div className="text-center">
+        <div className="mt-6 text-center">
           <span className="text-[0.75rem] font-light text-[#444]">
             Already have an account?
           </span>

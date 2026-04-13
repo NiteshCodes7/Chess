@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import Image from "next/image";
 
-
 interface User {
   id: string;
   email: string;
@@ -46,6 +45,14 @@ interface Stats {
   avgMoves: number;
   avgDuration: number;
 }
+
+const reasons: Game["endReason"][] = [
+  "checkmate",
+  "resignation",
+  "timeout",
+  "agreement",
+  "stalemate",
+];
 
 // Derive Stats from Games
 
@@ -366,7 +373,9 @@ export default function ProfilePage() {
   const [gamesLoading, setGamesLoading] = useState(true);
 
   const [tab, setTab] = useState<Tab>("overview");
-  const [gameFilter, setGameFilter] = useState<"all" | "win" | "loss" | "draw">("all");
+  const [gameFilter, setGameFilter] = useState<"all" | "win" | "loss" | "draw">(
+    "all",
+  );
 
   // ── Fetch user ──
   const fetchUser = useCallback(async () => {
@@ -462,7 +471,6 @@ export default function ProfilePage() {
       </nav>
 
       <div className="relative z-10 pt-20 pb-16 px-4 md:px-8 max-w-5xl mx-auto">
-
         {/* ── Hero header ── */}
         <div className="p-fade-1 relative border border-[#1a1a1a] bg-[#0e0e0e] mb-6 overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-[#c8a96e] to-transparent opacity-40" />
@@ -510,7 +518,7 @@ export default function ProfilePage() {
                   {userLoading ? (
                     <Skeleton w="160px" h="30px" />
                   ) : (
-                    user?.name ?? user?.username ?? "—"
+                    (user?.name ?? user?.username ?? "—")
                   )}
                 </h1>
                 {!userLoading && user?.name && user?.username && (
@@ -551,7 +559,7 @@ export default function ProfilePage() {
                 {userLoading ? (
                   <Skeleton w="90px" h="48px" />
                 ) : (
-                  user?.rating ?? 1200
+                  (user?.rating ?? 1200)
                 )}
               </div>
               {!userLoading && !gamesLoading && (
@@ -579,7 +587,9 @@ export default function ProfilePage() {
           <StatCard
             label="Wins"
             value={gamesLoading ? <Skeleton w="40px" h="30px" /> : stats.wins}
-            sub={stats.winStreak > 1 ? `${stats.winStreak} win streak` : undefined}
+            sub={
+              stats.winStreak > 1 ? `${stats.winStreak} win streak` : undefined
+            }
           />
           <StatCard
             label="Losses"
@@ -591,8 +601,14 @@ export default function ProfilePage() {
           />
           <StatCard
             label="Avg moves"
-            value={gamesLoading ? <Skeleton w="40px" h="30px" /> : stats.avgMoves}
-            sub={gamesLoading ? undefined : `~${fmtDuration(stats.avgDuration)} avg`}
+            value={
+              gamesLoading ? <Skeleton w="40px" h="30px" /> : stats.avgMoves
+            }
+            sub={
+              gamesLoading
+                ? undefined
+                : `~${fmtDuration(stats.avgDuration)} avg`
+            }
           />
         </div>
 
@@ -660,7 +676,11 @@ export default function ProfilePage() {
                             : "text-[#555]"
                       }`}
                     >
-                      {g.result === "win" ? "W" : g.result === "loss" ? "L" : "D"}
+                      {g.result === "win"
+                        ? "W"
+                        : g.result === "loss"
+                          ? "L"
+                          : "D"}
                     </span>
                     <span className="text-[0.8rem] font-light text-[#888] flex-1 truncate">
                       vs @{g.opponentUsername}
@@ -712,7 +732,9 @@ export default function ProfilePage() {
                     },
                     {
                       label: "Joined",
-                      value: userLoading ? null : fmtDate(user?.createdAt ?? ""),
+                      value: userLoading
+                        ? null
+                        : fmtDate(user?.createdAt ?? ""),
                     },
                   ].map(({ label, value }) => (
                     <div
@@ -817,29 +839,26 @@ export default function ProfilePage() {
                 </span>
               </div>
               <div className="p-5 space-y-4">
-                {(
-                  [
-                    "checkmate",
-                    "resignation",
-                    "timeout",
-                    "agreement",
-                    "stalemate",
-                  ] as Game["endReason"][]
-                ).map((reason) => {
-                  const count = games.filter((g) => g.endReason === reason).length;
+                {reasons.map((reason) => {
+                  const count = games.filter(
+                    (g) => g.endReason === reason,
+                  ).length;
                   const pct = games.length
                     ? Math.round((count / games.length) * 100)
                     : 0;
+
                   return (
                     <div key={reason}>
                       <div className="flex justify-between mb-1.5">
                         <span className="text-[0.68rem] tracking-widest capitalize text-[#878383]">
                           {reason}
                         </span>
+
                         <span className="text-[0.68rem] text-[#5e5d5d]">
                           {count} ({pct}%)
                         </span>
                       </div>
+
                       <div className="h-1 bg-[#504f4f] border border-[#1a1a1a] overflow-hidden">
                         <div
                           className="rating-bar-fill"
@@ -895,7 +914,9 @@ export default function ProfilePage() {
               <StatCard label="Best rating" value={stats.bestRating} />
               <StatCard
                 label="Avg game length"
-                value={stats.avgDuration > 0 ? fmtDuration(stats.avgDuration) : "—"}
+                value={
+                  stats.avgDuration > 0 ? fmtDuration(stats.avgDuration) : "—"
+                }
               />
               <StatCard
                 label="Avg moves"
