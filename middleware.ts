@@ -18,7 +18,7 @@ const PROTECTED_AUTH_ROUTES = [
 
 const SECRET = new TextEncoder().encode(process.env.JWT_ACCESS_SECRET!);
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const sessionToken = request.cookies.get("sessionToken");
@@ -28,9 +28,8 @@ export async function proxy(request: NextRequest) {
     pathname,
     hasSession: !!sessionToken,
     hasRefresh: !!refreshToken,
-    allCookies: request.cookies.getAll().map(c => c.name),
+    cookies: request.cookies.getAll().map((c) => c.name),
   });
-  
 
   const isPublicOnly = PUBLIC_ONLY_ROUTES.some(
     (route) => pathname === route || pathname.startsWith(route + "/"),
@@ -45,19 +44,16 @@ export async function proxy(request: NextRequest) {
       (route) => pathname === route || pathname.startsWith(route + "/"),
     ) && !isProtectedAuthRoute;
 
-  // Logged-in user trying to access login/register pages
   if (isPublicOnly && refreshToken) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
-  // Guest trying to access protected routes
   if (!isPublic && !sessionToken) {
     const loginUrl = new URL("/auth/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // Verify access token for protected routes
   if (!isPublic && sessionToken) {
     try {
       await jwtVerify(sessionToken.value, SECRET);
@@ -66,11 +62,10 @@ export async function proxy(request: NextRequest) {
       const loginUrl = new URL("/auth/login", request.url);
       loginUrl.searchParams.set("redirect", pathname);
 
-      const response = NextResponse.redirect(loginUrl);
-      response.cookies.delete("sessionToken");
-      response.cookies.delete("refreshToken");
-
-      return response;
+      const res = NextResponse.redirect(loginUrl);
+      res.cookies.delete("sessionToken");
+      res.cookies.delete("refreshToken");
+      return res;
     }
   }
 
