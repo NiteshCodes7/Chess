@@ -62,7 +62,9 @@ export async function proxy(request: NextRequest) {
     try {
       await jwtVerify(sessionToken.value, SECRET);
       return NextResponse.next();
-    } catch {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch(e: any) {
+      console.log("JWT verify failed:", e.message); 
       const loginUrl = new URL("/auth/login", request.url);
       loginUrl.searchParams.set("redirect", pathname);
 
