@@ -21,8 +21,16 @@ const SECRET = new TextEncoder().encode(process.env.JWT_ACCESS_SECRET!);
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const refreshToken = request.cookies.get("refreshToken");
   const sessionToken = request.cookies.get("sessionToken");
+  const refreshToken = request.cookies.get("refreshToken");
+
+  console.log({
+    pathname,
+    hasSession: !!sessionToken,
+    hasRefresh: !!refreshToken,
+    allCookies: request.cookies.getAll().map(c => c.name),
+  });
+  
 
   const isPublicOnly = PUBLIC_ONLY_ROUTES.some(
     (route) => pathname === route || pathname.startsWith(route + "/"),
