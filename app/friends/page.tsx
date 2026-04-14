@@ -13,9 +13,10 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import Link from "next/link";
-import { api, setAccessToken } from "@/lib/api";
+import { setAccessToken } from "@/lib/api";
 import { useAuth } from "@/context/AuthProvider";
 import { useRouter } from "next/navigation";
+import axios from "axios";
 
 type Tab = "chat" | "requests" | "add";
 
@@ -37,7 +38,7 @@ export default function FriendsPage() {
 
   async function logout() {
     try {
-      await api.post("/auth/logout");
+      await axios.post("/api/auth/logout");
     } catch {}
     localStorage.removeItem("wsToken");
     setAccessToken(null);

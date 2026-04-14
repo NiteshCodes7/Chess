@@ -6,6 +6,7 @@ import { setAccessToken } from "@/lib/api";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
+import axios from "axios";
 
 const keyframes = `
   @keyframes fadeUp {
@@ -132,7 +133,7 @@ export default function VerifyOtpPage() {
 
     try {
       setLoading(true);
-      const { data } = await api.post("/auth/verify-otp", { email, otp });
+      const { data } = await axios.post("/api/auth/verify-otp", { email, otp });
       setAccessToken(data.accessToken);
       if (data.wsToken) localStorage.setItem("wsToken", data.wsToken);
       setAuthed(true);

@@ -7,7 +7,8 @@ import { getSocket } from "@/lib/socket";
 import { useGameStore } from "@/store/useGameStore";
 import { ReconnectionState } from "@/types/socket";
 import Image from "next/image";
-import { api, setAccessToken } from "@/lib/api";
+import { setAccessToken } from "@/lib/api";
+import axios from "axios";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -16,7 +17,7 @@ export default function LandingPage() {
 
   async function logout() {
     try {
-      await api.post("/auth/logout");
+      await axios.post("/api/auth/logout");
     } catch {}
     localStorage.removeItem("wsToken");
     setAccessToken(null);

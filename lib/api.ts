@@ -27,7 +27,7 @@ api.interceptors.response.use(
   (res) => res,
   async (err) => {
     const originalRequest = err.config;
-     if (originalRequest.url?.includes("/auth/refresh")) {
+     if (originalRequest.url?.includes("/api/auth/refresh")) {
       setAccessToken(null);
       localStorage.setItem("wsToken", "");
       return Promise.reject(err); ;
@@ -36,7 +36,7 @@ api.interceptors.response.use(
     if (err.response?.status === 401 && !err.config._retry) {
       err.config._retry = true;
       try {
-        const { data } = await api.post("/auth/refresh");
+        const { data } = await api.post("/api/auth/refresh");
         setAccessToken(data.accessToken);
         localStorage.setItem("wsToken", data.wsToken);
         updateAllSocketAuth(data.wsToken)

@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/context/AuthProvider";
 import { useRouter } from "next/navigation";
 import { useCallback, useRef } from "react";
+import axios from "axios";
 
 interface UseGoogleOAuthOptions {
   redirectTo?: string;
@@ -38,11 +39,18 @@ export function useGoogleOAuth({
 
     return new Promise<void>((resolve, reject) => {
       // 3. Listen for the postMessage from the callback page
-      const onMessage = (e: MessageEvent) => {
+      const onMessage = async (e: MessageEvent) => {
         // Only accept messages from our own origin
         if (e.origin !== process.env.NEXT_PUBLIC_API_URL!) return;
 
-        const { accessToken, wsToken, error } = e.data ?? {};
+        const { accessToken, refreshToken, sessionToken, wsToken, error } = e.data ?? {};
+
+        await axios.post("/api/auth/google/set-session", {
+          accessToken,
+          refreshToken,
+          sessionToken,
+          wsToken,
+        });
 
         // Clean up
         window.removeEventListener("message", onMessage);
