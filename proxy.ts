@@ -30,7 +30,8 @@ export async function proxy(request: NextRequest) {
     "Headers.cookie:",
     request.headers.get("cookie") || "NONE"
   );
-
+  
+  console.log("Deployment Test");
   console.log("===============================");
   
   return NextResponse.next();
