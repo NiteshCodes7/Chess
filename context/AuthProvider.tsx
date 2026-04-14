@@ -21,6 +21,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [authed, setAuthed] = useState(false);
 
+  // pIng to backend
+  useEffect(() => {
+    const interval = setInterval(
+      async () => {
+        try {
+          await api.get("/health");
+        } catch {}
+      },
+      10 * 60 * 1000,
+    ); // 10 minutes
+
+    return () => clearInterval(interval);
+  }, [authed]);
+
   useEffect(() => {
     async function init() {
       try {
