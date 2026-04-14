@@ -8,6 +8,7 @@ import { getSocket } from "@/lib/socket";
 import { useToast } from "@/store/useToast";
 import { useInviteStore } from "@/store/useInviteStore";
 import { useGameStore } from "@/store/useGameStore";
+import axios from "axios";
 
 type AuthContextType = {
   loading: boolean;
@@ -38,7 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     async function init() {
       try {
-        const { data } = await api.post("/auth/refresh");
+        const { data } = await axios.post("/api/auth/refresh");
         setAccessToken(data.accessToken);
         localStorage.setItem("wsToken", data.wsToken);
         setAuthed(true);
