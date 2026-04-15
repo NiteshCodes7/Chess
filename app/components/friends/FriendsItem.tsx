@@ -14,6 +14,7 @@ type Friend = {
   rating?: number;
   status?: "online" | "playing" | "offline";
   lastSeen?: number | null;
+  unreadCount?: number;
 };
 
 type Props = {
@@ -156,6 +157,12 @@ export default function FriendItem({ friend, onClick, onUnfriend }: Props) {
             style={{ fontFamily: "Georgia, serif" }}
           >
             {friend.rating}
+          </span>
+        )}
+
+        {friend.unreadCount && friend.unreadCount > 0 && (
+          <span className="shrink-0 min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-medium">
+            {friend.unreadCount > 9 ? "9+" : friend.unreadCount}
           </span>
         )}
 

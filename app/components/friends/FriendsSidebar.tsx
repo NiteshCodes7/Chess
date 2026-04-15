@@ -13,6 +13,7 @@ type Friend = {
   rating?: number;
   status?: Status;
   lastSeen?: number | null;
+  unreadCount?: number;
 };
 
 type FriendsSidebarProps = {
@@ -74,9 +75,18 @@ export default function FriendsSidebar({ onSelect }: FriendsSidebarProps) {
         data.map((f) => ({
           ...f,
           status: pendingUpdates.get(f.id) ?? f.status,
+          unreadCount: 0,
         })),
       );
       pendingUpdates.clear();
+    };
+
+    const handleDm = ({ from }: { from: string }) => {
+      setFriends((prev) =>
+        prev.map((f) =>
+          f.id === from ? { ...f, unreadCount: (f.unreadCount ?? 0) + 1 } : f,
+        ),
+      );
     };
 
     const handlePresence = ({
@@ -103,6 +113,7 @@ export default function FriendsSidebar({ onSelect }: FriendsSidebarProps) {
 
     socket.on("friends_with_presence", handleFriends);
     socket.on("presence_update", handlePresence);
+    socket.on("dm", handleDm);
     socket.on("connect", requestFriends);
 
     if (socket.connected) requestFriends();
@@ -110,6 +121,7 @@ export default function FriendsSidebar({ onSelect }: FriendsSidebarProps) {
     return () => {
       socket.off("friends_with_presence", handleFriends);
       socket.off("presence_update", handlePresence);
+      socket.off("dm", handleDm);
       socket.off("connect", requestFriends);
     };
   }, [socket]);
@@ -211,7 +223,15 @@ export default function FriendsSidebar({ onSelect }: FriendsSidebarProps) {
                     <FriendItem
                       key={friend.id}
                       friend={friend}
-                      onClick={() => onSelect(friend)}
+                      onClick={() => {
+                        setFriends((prev) =>
+                          prev.map((f) =>
+                            f.id === friend.id ? { ...f, unreadCount: 0 } : f,
+                          ),
+                        );
+
+                        onSelect(friend);
+                      }}
                       onUnfriend={handleUnfriend}
                     />
                   ))}
