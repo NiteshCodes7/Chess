@@ -328,7 +328,7 @@ export default function FriendsPage() {
         {/* Chat / empty state */}
         <main className="flex-1 min-h-0 overflow-hidden md:block">
           {/* MOBILE VIEW */}
-          <div className="md:hidden h-full">
+          <div className="md:hidden h-full min-h-0 overflow-hidden">
             {mobileView === "tabs" ? (
               <div className="h-full flex flex-col bg-[#080808]">
                 {/* Mobile Tabs */}
@@ -386,18 +386,21 @@ export default function FriendsPage() {
                 </div>
               </div>
             ) : (
-              <div className="h-full flex flex-col">
+              <div className="h-full min-h-0 flex flex-col overflow-hidden">
                 {/* Back Button */}
                 <div className="text-sm text-[#c8a96e] hover:text-[#e6c98f] transition-colors">
                   <button
-                    onClick={() => setMobileView("tabs")}
+                    onClick={() => {
+                      setSelectedFriend(null);
+                      setMobileView("tabs");
+                    }}
                     className="text-sm text-[#c8a96e]"
                   >
                     ← Back
                   </button>
                 </div>
 
-                <div className="flex-1 min-h-0">
+                <div className="flex-1 min-h-0 overflow-hidden">
                   {selectedFriend && (
                     <ChatWindow selectedFriend={selectedFriend} />
                   )}

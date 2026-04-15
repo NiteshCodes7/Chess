@@ -11,17 +11,57 @@ type ChatInputProps = {
 export default function ChatInput({ to, gameId }: ChatInputProps) {
   const [text, setText] = useState("");
 
+  const bannedWords = [
+    "fuck",
+    "shit",
+    "bitch",
+    "asshole",
+    "bastard",
+    "mc",
+    "bc",
+    "chutiya",
+    "madarchod",
+    "bhenchod",
+    "boobs",
+    "f**k",
+    "ma*arch*d",
+    "sex",
+    "lund",
+  ];
+
+  const cleanedWords = (words: string[]) => {
+    const censoredWords = words.map((word) => {
+      const lower = word.toLowerCase();
+
+      if (bannedWords.includes(lower)) {
+        let stars = "";
+
+        for (let i = 0; i < word.length; i++) {
+          stars += "*";
+        }
+
+        return stars;
+      }
+
+      return word;
+    });
+    return censoredWords.join(" ");
+  };
+
   const sendMessage = () => {
     const trimmed = text.trim();
+
     if (!trimmed || (!to && !gameId)) return;
+
+    const safeMessage = cleanedWords(trimmed.split(" "));
 
     const socket = getSocket();
     if (!socket.connected) return;
 
     if (to) {
-      socket.emit("dm", { to, content: trimmed });
+      socket.emit("dm", { to, content: safeMessage });
     } else if (gameId) {
-      socket.emit("game_chat", { gameId, content: trimmed });
+      socket.emit("game_chat", { gameId, content: safeMessage });
     }
 
     setText("");
