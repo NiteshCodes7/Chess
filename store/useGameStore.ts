@@ -20,6 +20,11 @@ type Move = {
   to: Position;
 };
 
+type HistoryMove = {
+  san: string;
+  turn: "white" | "black";
+};
+
 type ReplayMove = Move & {
   turn: "white" | "black";
 };
@@ -57,16 +62,20 @@ type GameStore = {
   legalMoves: { row: number; col: number }[];
   setLegalMoves: (moves: { row: number; col: number }[]) => void;
   clearLegalMoves: () => void;
+
+  moves: HistoryMove[];
+  addMove: (move: HistoryMove) => void;
+  clearMoves: () => void;
 };
 
 function computeLegalMoves(
   board: BoardState,
   selected: { row: number; col: number },
-  color: "white" | "black"
+  color: "white" | "black",
 ) {
   const moves: { row: number; col: number }[] = [];
   const piece = board[selected.row][selected.col];
-  if(!piece) return moves;
+  if (!piece) return moves;
 
   for (let r = 0; r < 8; r++) {
     for (let c = 0; c < 8; c++) {
@@ -78,19 +87,54 @@ function computeLegalMoves(
           valid = isValidPawnMove(board, selected, { row: r, col: c }, color);
           break;
         case "rook":
-          valid = isValidRookMove(board, selected.row, selected.col, r, c, color);
+          valid = isValidRookMove(
+            board,
+            selected.row,
+            selected.col,
+            r,
+            c,
+            color,
+          );
           break;
         case "bishop":
-          valid = isValidBishopMove(board, selected.row, selected.col, r, c, color);
+          valid = isValidBishopMove(
+            board,
+            selected.row,
+            selected.col,
+            r,
+            c,
+            color,
+          );
           break;
         case "knight":
-          valid = isValidKnightMove(board, selected.row, selected.col, r, c, color);
+          valid = isValidKnightMove(
+            board,
+            selected.row,
+            selected.col,
+            r,
+            c,
+            color,
+          );
           break;
         case "queen":
-          valid = isValidQueenMove(board, selected.row, selected.col, r, c, color);
+          valid = isValidQueenMove(
+            board,
+            selected.row,
+            selected.col,
+            r,
+            c,
+            color,
+          );
           break;
         case "king":
-          valid = isValidKingMove(board, selected.row, selected.col, r, c, color);
+          valid = isValidKingMove(
+            board,
+            selected.row,
+            selected.col,
+            r,
+            c,
+            color,
+          );
           break;
       }
 
@@ -138,6 +182,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
   clearLegalMoves() {
     set({ legalMoves: [] });
+  },
+
+  moves: [],
+  addMove(move) {
+    set((state) => ({
+      moves: [...state.moves, move],
+    }));
+  },
+  clearMoves() {
+    set({ moves: [] });
   },
 
   handleSquareClick(row, col) {
@@ -345,9 +399,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
       gameId: null,
       serverTime: {
         white: 0,
-        black: 0
+        black: 0,
       },
       playerColor: null,
+      moves: [],
     });
   },
 }));

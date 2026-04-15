@@ -40,8 +40,6 @@ export function useGoogleOAuth({
     return new Promise<void>((resolve, reject) => {
       // 3. Listen for the postMessage from the callback page
       const onMessage = async (e: MessageEvent) => {
-        console.log("message origin:", e.origin);
-        console.log("expected:", process.env.NEXT_PUBLIC_API_URL);
         // Only accept messages from our own origin
         if (e.origin !== process.env.NEXT_PUBLIC_API_URL!) return;
 

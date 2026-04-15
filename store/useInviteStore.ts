@@ -2,7 +2,8 @@ import { create } from "zustand";
 
 type Invite = { 
     inviteId: string; 
-    from: string 
+    from: string ;
+    fromName: string;
 } | null;
 
 type InviteStore = {

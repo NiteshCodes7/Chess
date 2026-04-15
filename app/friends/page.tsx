@@ -118,6 +118,23 @@ export default function FriendsPage() {
               ),
             },
             {
+              label: "Leaderboard",
+              href: "/leaderboard",
+              icon: (
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  className="w-4 h-4 text-[#c8a96e]"
+                >
+                  <path d="M18 20V10" />
+                  <path d="M12 20V4" />
+                  <path d="M6 20v-6" />
+                </svg>
+              ),
+            },
+            {
               href: "/replay",
               title: "Replay",
               icon: (
@@ -155,7 +172,9 @@ export default function FriendsPage() {
               href={item.href}
               title={item.title}
               className={`relative w-10 h-10 flex items-center justify-center transition-all duration-150 ${
-                item.active ? "text-[#c8a96e]" : "text-[#6a6a6a] hover:text-[#d0c8b8]"
+                item.active
+                  ? "text-[#c8a96e]"
+                  : "text-[#6a6a6a] hover:text-[#d0c8b8]"
               }`}
             >
               {item.active && (

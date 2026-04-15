@@ -15,10 +15,10 @@ import GameChatPanel from "@/app/components/chat/GameChatPanel";
 import { initialBoard } from "@/lib/initialBoard";
 
 type GameMessages = {
-  from: string,
-  content: string,
-  isMe: boolean,
-}
+  from: string;
+  content: string;
+  isMe: boolean;
+};
 
 export default function GamePage({
   params,
@@ -60,6 +60,7 @@ export default function GamePage({
       promotionPending,
       time,
       lastTimestamp,
+      san,
     }: AuthoritativeMovePayload) => {
       useGameStore.setState({
         board,
@@ -70,6 +71,15 @@ export default function GamePage({
         serverTime: { white: time.white, black: time.black },
       });
       useGameStore.getState().setStatus(status);
+
+      if (san) {
+        const playedBy = turn === "white" ? "black" : "white";
+
+        useGameStore.getState().addMove({
+          san,
+          turn: playedBy,
+        });
+      }
     };
 
     const onReconnected = ({
@@ -100,8 +110,7 @@ export default function GamePage({
       useGameStore.setState({ promotionPending: { position, color } });
     };
 
-    const onGameOver = (s: GameStatus) =>
-      useGameStore.getState().setStatus(s);
+    const onGameOver = (s: GameStatus) => useGameStore.getState().setStatus(s);
 
     const onUnauthorized = async () => {
       const { data } = await api.post("/auth/refresh");

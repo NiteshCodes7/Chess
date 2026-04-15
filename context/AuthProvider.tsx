@@ -107,11 +107,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const onGameInvite = ({
       inviteId,
       from,
+      fromName
     }: {
       inviteId: string;
       from: string;
+      fromName: string;
     }) => {
-      useInviteStore.getState().setInvite({ inviteId, from });
+      useInviteStore.getState().setInvite({ inviteId, from, fromName });
     };
 
     const onMatchFound = ({

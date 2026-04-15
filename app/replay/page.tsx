@@ -150,6 +150,23 @@ export default function GamesPage() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-[#e8e0d0] px-4 py-10 flex flex-col items-center gap-8 font-serif">
+      <button
+            onClick={() => router.back()}
+            className="
+                absolute top-4 left-4 z-20
+                px-3 h-9
+                border border-[#2a2218]
+                bg-[#111]
+                text-[#c8a96e]
+                text-xs uppercase tracking-[0.2em]
+                hover:bg-[#161616]
+                transition-colors
+                cursor-pointer
+            "
+            >
+            ← Back
+        </button>
+
       {/* Background grid */}
       <div
         className="fixed inset-0 opacity-[0.02] pointer-events-none"
@@ -282,7 +299,7 @@ export default function GamesPage() {
                     className="group w-full text-left grid grid-cols-[36px_1fr_1fr_130px_60px_32px] max-[560px]:grid-cols-[1fr_1fr_100px_32px] items-center px-4 min-h-14 border-b border-[#0d0d0d] last:border-b-0 hover:bg-[#0e0e0e] transition-colors duration-150"
                   >
                     {/* Number */}
-                    <span className="text-[10px] text-[#444] max-[560px]:hidden">
+                    <span className="text-[10px] text-[#6a6868] max-[560px]:hidden">
                       {i + 1}
                     </span>
 

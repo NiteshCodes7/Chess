@@ -3,47 +3,44 @@
 import { useEffect, useState } from "react";
 import { useInviteStore } from "@/store/useInviteStore";
 import { getSocket } from "@/lib/socket";
-import { api } from "@/lib/api";
 
 export default function InviteModal() {
   const { invite, clearInvite } = useInviteStore();
   const [fromName, setFromName] = useState<string | null>(null);
   const [timer, setTimer] = useState(30);
 
-  useEffect(() => {
-    if (!invite) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setTimer(30);
-
-    // Fetch inviter's name
-    api
-      .get(`/users/${invite.from}`)
-      .then((res) => {
-        setFromName(res.data.name);
-      })
-      .catch(() => setFromName("A friend"));
-
-    const interval = setInterval(() => {
-      setTimer((p) => {
-        if (p <= 1) {
-          clearInterval(interval);
-          clearInvite();
-          return 0;
-        }
-        return p - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [invite]);
-
-  if (!invite) return null;
-
   function respond(accept: boolean) {
     const socket = getSocket();
     socket.emit("invite_response", { inviteId: invite!.inviteId, accept });
     clearInvite();
   }
+
+  // Reset modal state whenever a new invite arrives
+  useEffect(() => {
+    if (!invite) return;
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setTimer(30);
+
+    setFromName(invite.fromName);
+  }, [invite]);
+
+  // Countdown + auto decline
+  useEffect(() => {
+    if (!invite) return;
+    if (timer <= 0) {
+      respond(false);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setTimer((prev) => prev - 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [invite, timer]);
+
+  if (!invite) return null;
 
   return (
     <div

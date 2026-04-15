@@ -286,6 +286,7 @@ export default function LandingPage() {
             {[
               { label: "Play", href: "/play" },
               { label: "Friends", href: "/friends" },
+              { label: "Leaderboard", href: "/leaderboard" },
               { label: "Replay", href: "/replay" },
             ].map((l) => (
               <a
@@ -338,6 +339,88 @@ export default function LandingPage() {
                        shadow-[0_10px_30px_rgba(0,0,0,0.55)]
                        backdrop-blur-md"
                     >
+                      <div className="md:hidden border-b border-[#1c1c1c]">
+                        {[
+                          {
+                            label: "Play",
+                            href: "/play",
+                            icon: (
+                              <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.8"
+                                className="w-4 h-4 text-[#c8a96e]"
+                              >
+                                <polygon points="8 5 19 12 8 19 8 5" />
+                              </svg>
+                            ),
+                          },
+                          {
+                            label: "Friends",
+                            href: "/friends",
+                            icon: (
+                              <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.8"
+                                className="w-4 h-4 text-[#c8a96e]"
+                              >
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                <circle cx="9" cy="7" r="4" />
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                              </svg>
+                            ),
+                          },
+                          {
+                            label: "Leaderboard",
+                            href: "/leaderboard",
+                            icon: (
+                              <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.8"
+                                className="w-4 h-4 text-[#c8a96e]"
+                              >
+                                <path d="M18 20V10" />
+                                <path d="M12 20V4" />
+                                <path d="M6 20v-6" />
+                              </svg>
+                            ),
+                          },
+                          {
+                            label: "Replay",
+                            href: "/replay",
+                            icon: (
+                              <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.8"
+                                className="w-4 h-4 text-[#c8a96e]"
+                              >
+                                <path d="M3 12a9 9 0 1 0 3-6.7" />
+                                <polyline points="3 3 3 9 9 9" />
+                              </svg>
+                            ),
+                          },
+                        ].map((item) => (
+                          <button
+                            key={item.label}
+                            onClick={() => {
+                              router.push(item.href);
+                              setShowMenu(false);
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[#d0c8b8] hover:bg-[#1a1a1a] hover:text-[#f5ddb0] transition-all duration-150 border-b border-[#1c1c1c] last:border-b-0"
+                          >
+                            {item.icon}
+                            {item.label}
+                          </button>
+                        ))}
+                      </div>
                       <button
                         onClick={() => {
                           router.push("/auth/profile");

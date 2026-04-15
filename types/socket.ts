@@ -14,6 +14,7 @@ export type MatchFoundPayload = {
 export type AuthoritativeMovePayload = {
   board: BoardState;
   turn: "white" | "black";
+  san?: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   status: any;
   promotionPending: null | {
