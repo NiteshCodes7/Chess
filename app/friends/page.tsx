@@ -24,6 +24,7 @@ export default function FriendsPage() {
   const [selectedFriend, setSelectedFriend] = useState<Friend | null>(null);
   const [tab, setTab] = useState<Tab>("chat");
   const [open, setOpen] = useState(false);
+  const [mobileView, setMobileView] = useState<"tabs" | "chat">("tabs");
   const { setAuthed } = useAuth();
   const router = useRouter();
 
@@ -126,7 +127,7 @@ export default function FriendsPage() {
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="1.8"
-                  className="w-4 h-4 text-[#c8a96e]"
+                  className="w-4 h-4"
                 >
                   <path d="M18 20V10" />
                   <path d="M12 20V4" />
@@ -167,7 +168,7 @@ export default function FriendsPage() {
               ),
             },
           ].map((item) => (
-            <a
+            <Link
               key={item.title}
               href={item.href}
               title={item.title}
@@ -181,7 +182,7 @@ export default function FriendsPage() {
                 <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-[#c8a96e]" />
               )}
               {item.icon}
-            </a>
+            </Link>
           ))}
         </div>
 
@@ -363,41 +364,86 @@ export default function FriendsPage() {
           </header>
 
           {/* Chat / empty state */}
-          <main className="flex-1 min-h-0 overflow-hidden">
-            {selectedFriend && tab === "chat" ? (
-              <div className="h-full fade-in">
-                <ChatWindow selectedFriend={selectedFriend} />
-              </div>
-            ) : (
-              <div className="h-full flex flex-col items-center justify-center gap-5 slide-up">
-                <div className="w-16 h-16 border border-[#6e6d6d] bg-[#080808] flex items-center justify-center">
-                  <span
-                    className="select-none text-3xl"
-                    style={{ color: "#878383", opacity: 0.4 }}
-                  >
-                    ♛
-                  </span>
-                </div>
-                <div className="text-center">
-                  <div className="flex items-center gap-3 justify-center mb-1.5">
-                    <span className="block w-5 h-px bg-[#878383]" />
-                    <span className="text-[#878383] text-xs tracking-[0.2em] uppercase">
-                      {tab === "chat"
-                        ? "No conversation open"
-                        : tab === "requests"
-                          ? "Manage requests in the panel"
-                          : "Search for a player"}
-                    </span>
-                    <span className="block w-5 h-px bg-[#878383]" />
+          <main className="flex-1 min-h-0 overflow-hidden md:block">
+            {/* MOBILE VIEW */}
+            <div className="md:hidden h-full">
+              {mobileView === "tabs" ? (
+                <div className="h-full flex flex-col bg-[#080808]">
+                  {/* Mobile Tabs */}
+                  <div className="grid grid-cols-3 border-b border-[#111]">
+                    {[
+                      { key: "chat", label: "Friends" },
+                      { key: "requests", label: "Requests" },
+                      { key: "add", label: "Add" },
+                    ].map((t) => (
+                      <button
+                        key={t.key}
+                        onClick={() => setTab(t.key as Tab)}
+                        className={`py-3 text-xs uppercase tracking-widest border-b ${
+                          tab === t.key
+                            ? "text-[#c8a96e] border-[#c8a96e]"
+                            : "text-[#777] border-transparent"
+                        }`}
+                      >
+                        {t.label}
+                      </button>
+                    ))}
                   </div>
-                  <p className="text-[#777575] text-xs font-light">
-                    {tab === "chat"
-                      ? "Select a friend from the left"
-                      : "Use the panel on the left"}
-                  </p>
+
+                  <div className="flex-1 overflow-y-auto">
+                    {tab === "chat" && (
+                      <FriendsSidebar
+                        onSelect={(friend) => {
+                          setSelectedFriend(friend);
+                          setMobileView("chat");
+                        }}
+                      />
+                    )}
+
+                    {tab === "requests" && (
+                      <div className="p-4">
+                        <FriendRequests />
+                      </div>
+                    )}
+
+                    {tab === "add" && (
+                      <div className="p-4">
+                        <AddFriend />
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="h-full flex flex-col">
+                  {/* Back Button */}
+                  <div className="h-12 border-b border-[#111] flex items-center px-4">
+                    <button
+                      onClick={() => setMobileView("tabs")}
+                      className="text-sm text-[#c8a96e]"
+                    >
+                      ← Back
+                    </button>
+                  </div>
+
+                  <div className="flex-1 min-h-0">
+                    {selectedFriend && (
+                      <ChatWindow selectedFriend={selectedFriend} />
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* DESKTOP VIEW */}
+            <div className="hidden md:block h-full">
+              {selectedFriend && tab === "chat" ? (
+                <ChatWindow selectedFriend={selectedFriend} />
+              ) : (
+                <div className="h-full flex items-center justify-center text-[#555] text-sm">
+                  No conversation open
+                </div>
+              )}
+            </div>
           </main>
         </div>
       </Sheet>
