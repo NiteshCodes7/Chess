@@ -9,7 +9,8 @@ export type GameStatus =
   | { state: "stalemate"; winner: null }
   | { state: "promotion"; winner: null }
   | { state: "timeout"; winner: "white" | "black" }
-  | { state: "abandoned"; winner: "white" | "black" };
+  | { state: "abandoned"; winner: "white" | "black" }
+  | { state: "resignation"; winner: "white" | "black" };
 
 export function getGameStatus(
   board: BoardState,

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { getUserId } from "@/lib/getUser";
+import Image from "next/image";
 
 type Player = {
   id: string;
@@ -31,6 +32,39 @@ function initials(name?: string | null) {
     .join("")
     .slice(0, 2)
     .toUpperCase();
+}
+
+function PlayerAvatar({
+  username,
+  avatar,
+  bg,
+  fg,
+}: {
+  username: string;
+  avatar?: string | null;
+  bg: string;
+  fg: string;
+}) {
+  if (avatar) {
+    return (
+      <Image
+        src={avatar}
+        alt={username}
+        width={100}
+        height={100}
+        className="w-8 h-8 rounded-full object-cover border border-[#2a2218] shrink-0"
+      />
+    );
+  }
+
+  return (
+    <div
+      className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] shrink-0"
+      style={{ background: bg, color: fg }}
+    >
+      {initials(username)}
+    </div>
+  );
 }
 
 function avatarColor(name?: string | null) {
@@ -71,18 +105,10 @@ export default function LeaderboardPage() {
       <button
         onClick={() => router.back()}
         className="
-                absolute top-4 left-4 z-20
-                px-3 h-9
-                border border-[#2a2218]
-                bg-[#111]
-                text-[#c8a96e]
-                text-xs uppercase tracking-[0.2em]
-                hover:bg-[#161616]
-                transition-colors
-                cursor-pointer
-            "
+          fixed z-20 top-3 left-3 sm:top-4 sm:left-4 h-8 sm:h-9 px-2.5 sm:px-3 min-w-11 border border-[#2a2218] bg-[#111]/95 backdrop-blur-md text-[#c8a96e] text-[10px] sm:text-xs uppercase tracking-[0.18em] sm:tracking-[0.2em] hover:bg-[#161616] active:scale-95 transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer"
       >
-        ← Back
+        <span className="text-sm leading-none">←</span>
+        <span className="hidden md:block xs:inline">Back</span>
       </button>
 
       {/* Grid Background */}
@@ -116,18 +142,19 @@ export default function LeaderboardPage() {
           <div className="mb-6 border border-[#2a2218] bg-[#111] p-6 text-center">
             <div className="text-3xl mb-2 text-[#c8a96e]">♔</div>
 
-            <div
-              className="
-                w-16 h-16 mx-auto mb-3 rounded-full
-                flex items-center justify-center
-                text-lg font-semibold
-                bg-[#c8a96e] text-[#111]
-                border border-[#e6c98f]
-                shadow-[0_0_18px_rgba(200,169,110,0.18)]
-            "
-            >
-              {initials(topPlayer.username)}
-            </div>
+            {topPlayer.avatar ? (
+              <Image
+                src={topPlayer.avatar}
+                alt={topPlayer.username}
+                width={100}
+                height={100}
+                className="w-16 h-16 mx-auto mb-3 rounded-full object-cover border border-[#e6c98f] shadow-[0_0_18px_rgba(200,169,110,0.18)]"
+              />
+            ) : (
+              <div className="w-16 h-16 mx-auto mb-3 rounded-full flex items-center justify-center text-lg font-semibold bg-[#c8a96e] text-[#111] border border-[#e6c98f] shadow-[0_0_18px_rgba(200,169,110,0.18)]">
+                {initials(topPlayer.username)}
+              </div>
+            )}
 
             <h2 className="text-xl text-[#c8a96e] tracking-wide">
               {topPlayer.username}
@@ -140,12 +167,12 @@ export default function LeaderboardPage() {
         )}
 
         {/* Table Header */}
-        <div className="grid grid-cols-[50px_1fr_100px_100px_100px] items-center px-4 min-h-10 bg-[#080808] border border-[#141414] text-[9px] uppercase tracking-[0.22em] text-[#555]">
+        <div className="grid grid-cols-[36px_minmax(0,1fr)_72px] sm:grid-cols-[50px_1fr_90px_90px_90px] items-center px-4 min-h-10 bg-[#080808] border border-[#141414] text-[9px] uppercase tracking-[0.22em] text-[#555]">
           <span>#</span>
           <span>Player</span>
           <span>Rating</span>
-          <span>Games</span>
-          <span>Win Rate</span>
+          <span className="hidden sm:block">Games</span>
+          <span className="hidden sm:block">Win Rate</span>
         </div>
 
         {/* Rows */}
@@ -181,11 +208,11 @@ export default function LeaderboardPage() {
               return (
                 <div
                   key={player.id}
-                  className={`
-                    grid grid-cols-[50px_1fr_100px_100px_100px]
+                  className={` grid
+                    grid-cols-[36px_minmax(0,1fr)_72px] sm:grid-cols-[50px_1fr_90px_90px_90px]
                     items-center px-4 min-h-14 border-b transition-colors
                     ${
-                        isMe
+                      isMe
                         ? "bg-[#15120b] border-[#3a2c14] shadow-[inset_0_0_0_1px_rgba(200,169,110,0.18)]"
                         : "border-[#0d0d0d] hover:bg-[#0e0e0e]"
                     }
@@ -196,14 +223,14 @@ export default function LeaderboardPage() {
 
                   {/* Player */}
                   <div className="flex items-center gap-3 min-w-0">
-                    <div
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-[10px]"
-                      style={{ background: bg, color: fg }}
-                    >
-                      {initials(player.username)}
-                    </div>
+                    <PlayerAvatar
+                      username={player.username}
+                      avatar={player.avatar}
+                      bg={bg}
+                      fg={fg}
+                    />
 
-                    <span className="truncate text-sm text-[#d0c8b8]">
+                    <span className="truncate text-[13px] sm:text-sm text-[#d0c8b8] max-w-full">
                       {player.username}
                     </span>
                   </div>
@@ -214,10 +241,14 @@ export default function LeaderboardPage() {
                   </span>
 
                   {/* Games */}
-                  <span className="text-[#999] text-sm">{games}</span>
+                  <span className="hidden sm:block text-[#999] text-sm">
+                    {games}
+                  </span>
 
                   {/* Win Rate */}
-                  <span className="text-[#7aad6e] text-sm">{winRate}%</span>
+                  <span className="hidden sm:block text-[#7aad6e] text-sm">
+                    {winRate}%
+                  </span>
                 </div>
               );
             })}

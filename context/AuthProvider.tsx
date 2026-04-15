@@ -102,6 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [authed]);
 
   useEffect(() => {
+    if (!authed) return;
     const socket = getSocket();
 
     const onGameInvite = ({

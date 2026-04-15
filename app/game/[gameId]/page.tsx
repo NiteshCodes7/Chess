@@ -44,6 +44,7 @@ export default function GamePage({
   const [chatOpen, setChatOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [gameMessages, setGameMessages] = useState<GameMessages[]>([]);
+  const [showForfeitModal, setShowForfeitModal] = useState(false);
 
   // ── Socket: game events ──
   useEffect(() => {
@@ -329,6 +330,8 @@ export default function GamePage({
       return status.winner === playerColor ? "You Win" : "You Lose";
     if (status.state === "abandoned")
       return status.winner === playerColor ? "You Win" : "You Lose";
+    if (status.state === "resignation")
+      return status.winner === playerColor ? "You Win" : "You Lose";
     return null;
   }
 
@@ -339,6 +342,8 @@ export default function GamePage({
     if (status.state === "stalemate") return "The game is a draw";
     if (status.state === "abandoned")
       return `${status.winner} wins — opponent abandoned`;
+    if (status.state === "resignation")
+      return `${status.winner} wins by resignation`;
     return "";
   }
 
@@ -401,8 +406,37 @@ export default function GamePage({
 
       {/* ── MAIN LAYOUT ── */}
       <div className="relative z-10 w-full max-w-6xl flex flex-col lg:flex-row gap-4 lg:gap-8 items-center lg:items-start justify-center">
-        <div className="flex-1 flex flex-col items-center gap-3 min-w-0">
+        <div className="flex-1 flex flex-col items-center gap-4 min-w-0">
           <ChessBoard />
+
+          {!resultMessage && (
+            <button
+              onClick={() => setShowForfeitModal(true)}
+              className="group relative overflow-hidden px-6 py-2.5 border text-xs uppercase tracking-[0.22em] font-light transition-all duration-300"
+              style={{
+                borderColor: "#3a1a1a",
+                color: "#cfa3a3",
+                background: "rgba(18,8,8,0.9)",
+                backdropFilter: "blur(8px)",
+              }}
+              onMouseEnter={(e) => {
+                const el = e.currentTarget;
+                el.style.background = "#8a3030";
+                el.style.color = "#f5ecec";
+                el.style.borderColor = "#8a3030";
+                el.style.boxShadow = "0 0 25px rgba(138,48,48,0.25)";
+              }}
+              onMouseLeave={(e) => {
+                const el = e.currentTarget;
+                el.style.background = "rgba(18,8,8,0.9)";
+                el.style.color = "#cfa3a3";
+                el.style.borderColor = "#3a1a1a";
+                el.style.boxShadow = "none";
+              }}
+            >
+              Resign
+            </button>
+          )}
         </div>
 
         <div
@@ -727,6 +761,98 @@ export default function GamePage({
               onSelect={handlePromotionSelect}
               color={playerColor ?? "white"}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Resign Modal */}
+      {showForfeitModal && !resultMessage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center modal-bg">
+          <div
+            className="absolute inset-0 bg-black/75"
+            style={{ backdropFilter: "blur(8px)" }}
+            onClick={() => setShowForfeitModal(false)}
+          />
+
+          <div
+            className="relative z-10 w-[92%] max-w-md border modal-card px-8 py-8 flex flex-col items-center"
+            style={{
+              borderColor: "#241212",
+              background: "rgba(8,8,8,0.96)",
+              backdropFilter: "blur(16px)",
+              boxShadow: "0 0 80px rgba(138,48,48,0.12)",
+            }}
+          >
+            <div className="flex items-center gap-3 mb-5">
+              <span className="block w-6 h-px bg-[#8a3030] opacity-50" />
+              <span className="text-[#c98f8f] text-xs uppercase tracking-[0.28em]">
+                Confirm Resignation
+              </span>
+              <span className="block w-6 h-px bg-[#8a3030] opacity-50" />
+            </div>
+
+            <h2
+              className="text-3xl font-light italic mb-3"
+              style={{
+                fontFamily: "Georgia, serif",
+                color: "#e5d6d6",
+              }}
+            >
+              Are you sure?
+            </h2>
+
+            <p className="text-[#777] text-sm font-light text-center leading-relaxed mb-6">
+              You will immediately lose this game and your opponent will be
+              declared the winner.
+            </p>
+
+            <div className="grid grid-cols-2 gap-3 w-full">
+              <button
+                onClick={() => setShowForfeitModal(false)}
+                className="py-2.5 border text-xs uppercase tracking-[0.16em] transition-all duration-200"
+                style={{
+                  borderColor: "#1f1f1f",
+                  color: "#888",
+                  background: "transparent",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = "#444";
+                  e.currentTarget.style.color = "#ddd";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "#1f1f1f";
+                  e.currentTarget.style.color = "#888";
+                }}
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={() => {
+                  getSocket().emit("forfeit", { gameId });
+                  setShowForfeitModal(false);
+                }}
+                className="py-2.5 border text-xs uppercase tracking-[0.16em] transition-all duration-200"
+                style={{
+                  borderColor: "#8a3030",
+                  color: "#f0dede",
+                  background: "rgba(138,48,48,0.12)",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "#8a3030";
+                  e.currentTarget.style.color = "#ffffff";
+                  e.currentTarget.style.boxShadow =
+                    "0 0 25px rgba(138,48,48,0.25)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "rgba(138,48,48,0.12)";
+                  e.currentTarget.style.color = "#f0dede";
+                  e.currentTarget.style.boxShadow = "none";
+                }}
+              >
+                Yes, Resign
+              </button>
+            </div>
           </div>
         </div>
       )}
