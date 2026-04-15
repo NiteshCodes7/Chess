@@ -6,6 +6,7 @@ const PUBLIC_ONLY_ROUTES = [
   "/auth/register",
   "/auth/verify-otp",
   "/auth/forgot-password",
+  "/auth/google/callback",
 ];
 
 const PUBLIC_ROUTES = ["/", ...PUBLIC_ONLY_ROUTES];
