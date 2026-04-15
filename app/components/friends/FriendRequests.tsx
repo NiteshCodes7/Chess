@@ -12,7 +12,11 @@ type Request = {
   };
 };
 
-export default function FriendRequests() {
+export default function FriendRequests({
+  onCountChange,
+}: {
+  onCountChange?: (count: number) => void;
+}) {
   const [requests, setRequests] = useState<Request[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -23,6 +27,10 @@ export default function FriendRequests() {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    onCountChange?.(requests.length);
+  }, [requests, onCountChange]);
 
   async function accept(id: string) {
     try {
@@ -57,7 +65,12 @@ export default function FriendRequests() {
     return (
       <div className="flex flex-col items-center justify-center py-10 gap-3">
         <div className="w-10 h-10 border border-[#141414] bg-[#0e0e0e] flex items-center justify-center">
-          <span className="text-xl opacity-20 select-none" style={{ color: "#878383", opacity: 0.7}}>♟</span>
+          <span
+            className="text-xl opacity-20 select-none"
+            style={{ color: "#878383", opacity: 0.7 }}
+          >
+            ♟
+          </span>
         </div>
         <div className="text-center">
           <div className="flex items-center gap-2 justify-center mb-1">

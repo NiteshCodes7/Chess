@@ -1,17 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import FriendsSidebar from "../components/friends/FriendsSidebar";
 import ChatWindow from "../components/chat/ChatWindow";
 import FriendRequests from "../components/friends/FriendRequests";
 import AddFriend from "../components/friends/AddFriend";
 import { Friend } from "../../types/friends";
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import Link from "next/link";
 import { setAccessToken } from "@/lib/api";
 import { useAuth } from "@/context/AuthProvider";
@@ -23,19 +17,10 @@ type Tab = "chat" | "requests" | "add";
 export default function FriendsPage() {
   const [selectedFriend, setSelectedFriend] = useState<Friend | null>(null);
   const [tab, setTab] = useState<Tab>("chat");
-  const [open, setOpen] = useState(false);
   const [mobileView, setMobileView] = useState<"tabs" | "chat">("tabs");
+  const [requestCount, setRequestCount] = useState(0);
   const { setAuthed } = useAuth();
   const router = useRouter();
-
-  useEffect(() => {
-    const media = window.matchMedia("(min-width: 768px)");
-    const handler = () => {
-      if (media.matches) setOpen(false);
-    };
-    media.addEventListener("change", handler);
-    return () => media.removeEventListener("change", handler);
-  }, []);
 
   async function logout() {
     try {
@@ -231,13 +216,19 @@ export default function FriendsPage() {
                   setTab(t.key);
                   if (t.key !== "chat") setSelectedFriend(null);
                 }}
-                className={`flex-1 pb-2 text-xs tracking-widest uppercase font-light border-b-2 transition-all duration-150 -mb-px ${
+                className={`relative flex-1 pb-2 text-xs tracking-widest uppercase font-light border-b-2 transition-all duration-150 -mb-px ${
                   tab === t.key
                     ? "text-[#c8a96e] border-[#c8a96e]"
                     : "text-[#8a8888] border-transparent hover:text-[#c3c0c0]"
                 }`}
               >
                 {t.label}
+
+                {t.key === "requests" && requestCount > 0 && (
+                  <span className="absolute top-0 right-5 min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-medium">
+                    {requestCount > 9 ? "9+" : requestCount}
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -254,7 +245,7 @@ export default function FriendsPage() {
           )}
           {tab === "requests" && (
             <div className="p-4">
-              <FriendRequests />
+              <FriendRequests onCountChange={setRequestCount} />
             </div>
           )}
           {tab === "add" && (
@@ -266,187 +257,167 @@ export default function FriendsPage() {
       </aside>
 
       {/* ── COLUMN 3: Chat area ── */}
-      <Sheet open={open} onOpenChange={setOpen}>
-        {/* Mobile sheet */}
-        <SheetContent
-          side="left"
-          className="p-0 w-72 bg-[#080808] border-r border-[#0f0f0f]"
-        >
-          <SheetTitle className="sr-only">Friends</SheetTitle>
-          <div className="px-4 pt-5 pb-3 border-b border-[#111]">
-            <p className="text-[#c8a96e] text-xs tracking-[0.2em] uppercase font-light">
-              Friends
-            </p>
-          </div>
-          <FriendsSidebar
-            onSelect={(friend) => {
-              setSelectedFriend(friend);
-              setOpen(false);
-            }}
-          />
-        </SheetContent>
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        {/* Topbar */}
+        <header className="flex items-center gap-3 px-3 md:px-5 h-12 border-b border-[#0f0f0f] shrink-0 bg-[#0a0a0a]">
+          {selectedFriend ? (
+            <>
+              {/* Avatar */}
+              <div className="w-6 h-6 border border-[#1e1e1e] bg-[#0e0e0e] flex items-center justify-center shrink-0">
+                <span className="text-[10px] text-[#545151] font-light">
+                  {selectedFriend.name?.[0]?.toUpperCase() ?? "?"}
+                </span>
+              </div>
 
-        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-          {/* Topbar */}
-          <header className="flex items-center gap-3 px-5 h-12 border-b border-[#0f0f0f] shrink-0 bg-[#0a0a0a]">
-            {/* Mobile trigger */}
-            <SheetTrigger asChild>
-              <button className="md:hidden flex flex-col gap-1 w-5 justify-center shrink-0">
-                <span className="block h-px w-full bg-[#878383]" />
-                <span className="block h-px w-3/4 bg-[#878383]" />
-                <span className="block h-px w-full bg-[#878383]" />
-              </button>
-            </SheetTrigger>
+              <h2
+                className="text-sm font-light text-[#e8e0d0] truncate"
+                style={{ fontFamily: "Georgia, serif" }}
+              >
+                {selectedFriend.name}
+              </h2>
 
-            {selectedFriend ? (
-              <>
-                {/* Avatar */}
-                <div className="w-6 h-6 border border-[#1e1e1e] bg-[#0e0e0e] flex items-center justify-center shrink-0">
-                  <span className="text-[10px] text-[#545151] font-light">
-                    {selectedFriend.name?.[0]?.toUpperCase() ?? "?"}
+              {/* Divider */}
+              <span className="text-[#878383] text-xs">|</span>
+
+              {/* Status */}
+              <div className="flex items-center gap-1.5">
+                <div
+                  className="w-1.5 h-1.5 rounded-full"
+                  style={{
+                    background:
+                      selectedFriend.status === "online"
+                        ? "#4a8a4a"
+                        : selectedFriend.status === "playing"
+                          ? "#c8a96e"
+                          : "#2a2a2a",
+                  }}
+                />
+                <span className="text-[#878383] text-xs font-light capitalize">
+                  {selectedFriend.status === "playing"
+                    ? "In a game"
+                    : (selectedFriend.status ?? "Offline")}
+                </span>
+              </div>
+
+              {/* Rating badge */}
+              {selectedFriend.rating && (
+                <div className="ml-auto flex items-center gap-1.5 border border-[#1a1a1a] px-2 py-0.5">
+                  <span className="text-[#878383] text-[10px] tracking-widest">
+                    ELO
+                  </span>
+                  <span
+                    className="text-[#c8a96e] text-xs font-light"
+                    style={{ fontFamily: "Georgia, serif" }}
+                  >
+                    {selectedFriend.rating}
                   </span>
                 </div>
+              )}
+            </>
+          ) : (
+            <span className="text-[#222] text-xs tracking-[0.15em] uppercase font-light">
+              {tab === "requests"
+                ? "Requests"
+                : tab === "add"
+                  ? "Add friend"
+                  : "Select a conversation"}
+            </span>
+          )}
+        </header>
 
-                <h2
-                  className="text-sm font-light text-[#e8e0d0] truncate"
-                  style={{ fontFamily: "Georgia, serif" }}
-                >
-                  {selectedFriend.name}
-                </h2>
-
-                {/* Divider */}
-                <span className="text-[#878383] text-xs">|</span>
-
-                {/* Status */}
-                <div className="flex items-center gap-1.5">
-                  <div
-                    className="w-1.5 h-1.5 rounded-full"
-                    style={{
-                      background:
-                        selectedFriend.status === "online"
-                          ? "#4a8a4a"
-                          : selectedFriend.status === "playing"
-                            ? "#c8a96e"
-                            : "#2a2a2a",
-                    }}
-                  />
-                  <span className="text-[#878383] text-xs font-light capitalize">
-                    {selectedFriend.status === "playing"
-                      ? "In a game"
-                      : (selectedFriend.status ?? "Offline")}
-                  </span>
-                </div>
-
-                {/* Rating badge */}
-                {selectedFriend.rating && (
-                  <div className="ml-auto flex items-center gap-1.5 border border-[#1a1a1a] px-2 py-0.5">
-                    <span className="text-[#878383] text-[10px] tracking-widest">
-                      ELO
-                    </span>
-                    <span
-                      className="text-[#c8a96e] text-xs font-light"
-                      style={{ fontFamily: "Georgia, serif" }}
-                    >
-                      {selectedFriend.rating}
-                    </span>
-                  </div>
-                )}
-              </>
-            ) : (
-              <span className="text-[#222] text-xs tracking-[0.15em] uppercase font-light">
-                {tab === "requests"
-                  ? "Requests"
-                  : tab === "add"
-                    ? "Add friend"
-                    : "Select a conversation"}
-              </span>
-            )}
-          </header>
-
-          {/* Chat / empty state */}
-          <main className="flex-1 min-h-0 overflow-hidden md:block">
-            {/* MOBILE VIEW */}
-            <div className="md:hidden h-full">
-              {mobileView === "tabs" ? (
-                <div className="h-full flex flex-col bg-[#080808]">
-                  {/* Mobile Tabs */}
-                  <div className="grid grid-cols-3 border-b border-[#111]">
-                    {[
-                      { key: "chat", label: "Friends" },
-                      { key: "requests", label: "Requests" },
-                      { key: "add", label: "Add" },
-                    ].map((t) => (
-                      <button
-                        key={t.key}
-                        onClick={() => setTab(t.key as Tab)}
-                        className={`py-3 text-xs uppercase tracking-widest border-b ${
-                          tab === t.key
-                            ? "text-[#c8a96e] border-[#c8a96e]"
-                            : "text-[#777] border-transparent"
-                        }`}
-                      >
-                        {t.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="flex-1 overflow-y-auto">
-                    {tab === "chat" && (
-                      <FriendsSidebar
-                        onSelect={(friend) => {
-                          setSelectedFriend(friend);
-                          setMobileView("chat");
-                        }}
-                      />
-                    )}
-
-                    {tab === "requests" && (
-                      <div className="p-4">
-                        <FriendRequests />
-                      </div>
-                    )}
-
-                    {tab === "add" && (
-                      <div className="p-4">
-                        <AddFriend />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="h-full flex flex-col">
-                  {/* Back Button */}
-                  <div className="h-12 border-b border-[#111] flex items-center px-4">
+        {/* Chat / empty state */}
+        <main className="flex-1 min-h-0 overflow-hidden md:block">
+          {/* MOBILE VIEW */}
+          <div className="md:hidden h-full">
+            {mobileView === "tabs" ? (
+              <div className="h-full flex flex-col bg-[#080808]">
+                {/* Mobile Tabs */}
+                <div className="grid grid-cols-3 border-b border-[#111]">
+                  {[
+                    { key: "chat", label: "Friends" },
+                    { key: "requests", label: "Requests" },
+                    { key: "add", label: "Add" },
+                  ].map((t) => (
                     <button
-                      onClick={() => setMobileView("tabs")}
-                      className="text-sm text-[#c8a96e]"
+                      key={t.key}
+                      onClick={() => {
+                        setTab(t.key as Tab);
+                        setMobileView("tabs");
+                        if (t.key !== "chat") setSelectedFriend(null);
+                      }}
+                      className={`relative py-3 text-xs uppercase tracking-widest border-b transition-colors ${
+                        tab === t.key
+                          ? "text-[#c8a96e] border-[#c8a96e]"
+                          : "text-[#777] border-transparent"
+                      }`}
                     >
-                      ← Back
+                      {t.label}
+
+                      {t.key === "requests" && requestCount > 0 && (
+                        <span className="absolute top-1.5 right-2 min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-medium">
+                          {requestCount > 9 ? "9+" : requestCount}
+                        </span>
+                      )}
                     </button>
-                  </div>
-
-                  <div className="flex-1 min-h-0">
-                    {selectedFriend && (
-                      <ChatWindow selectedFriend={selectedFriend} />
-                    )}
-                  </div>
+                  ))}
                 </div>
-              )}
-            </div>
 
-            {/* DESKTOP VIEW */}
-            <div className="hidden md:block h-full">
-              {selectedFriend && tab === "chat" ? (
-                <ChatWindow selectedFriend={selectedFriend} />
-              ) : (
-                <div className="h-full flex items-center justify-center text-[#555] text-sm">
-                  No conversation open
+                <div className="flex-1 overflow-y-auto">
+                  {tab === "chat" && (
+                    <FriendsSidebar
+                      onSelect={(friend) => {
+                        setSelectedFriend(friend);
+                        setMobileView("chat");
+                      }}
+                    />
+                  )}
+
+                  {tab === "requests" && (
+                    <div className="p-4">
+                      <FriendRequests onCountChange={setRequestCount} />
+                    </div>
+                  )}
+
+                  {tab === "add" && (
+                    <div className="p-4">
+                      <AddFriend />
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </main>
-        </div>
-      </Sheet>
+              </div>
+            ) : (
+              <div className="h-full flex flex-col">
+                {/* Back Button */}
+                <div className="text-sm text-[#c8a96e] hover:text-[#e6c98f] transition-colors">
+                  <button
+                    onClick={() => setMobileView("tabs")}
+                    className="text-sm text-[#c8a96e]"
+                  >
+                    ← Back
+                  </button>
+                </div>
+
+                <div className="flex-1 min-h-0">
+                  {selectedFriend && (
+                    <ChatWindow selectedFriend={selectedFriend} />
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* DESKTOP VIEW */}
+          <div className="hidden md:block h-full">
+            {selectedFriend && tab === "chat" ? (
+              <ChatWindow selectedFriend={selectedFriend} />
+            ) : (
+              <div className="h-full flex items-center justify-center text-[#555] text-sm">
+                No conversation open
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
