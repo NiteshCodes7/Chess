@@ -19,23 +19,28 @@ export function useGoogleOAuth({
   const popupRef = useRef<Window | null>(null);
   const listenerRef = useRef<((e: MessageEvent) => void) | null>(null);
 
-  const login = useCallback(async () => {
-    // 1. Ask backend for the Google OAuth URL
-    const { data } = await api.get<{ redirect: string }>("/auth/google");
-
-    // 2. Open the popup
+  const login = useCallback(() => {
     const width = 500;
     const height = 620;
     const left = window.screenX + (window.outerWidth - width) / 2;
     const top = window.screenY + (window.outerHeight - height) / 2;
 
     const popup = window.open(
-      data.redirect,
+      "about:blank",
       "google-oauth",
       `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no,scrollbars=yes`,
     );
 
+    if (!popup) {
+      alert("Popup blocked! Please allow popups for this site.");
+      return;
+    }
+
     popupRef.current = popup;
+
+    api.get<{ redirect: string }>("/auth/google").then(({ data }) => {
+      popup.location.href = data.redirect;
+    });
 
     return new Promise<void>((resolve, reject) => {
       // 3. Listen for the postMessage from the callback page
@@ -45,7 +50,8 @@ export function useGoogleOAuth({
         // Only accept messages from our own origin
         if (e.origin !== process.env.NEXT_PUBLIC_API_URL!) return;
 
-        const { accessToken, refreshToken, sessionToken, wsToken, error } = e.data ?? {};
+        const { accessToken, refreshToken, sessionToken, wsToken, error } =
+          e.data ?? {};
 
         await axios.post("/api/auth/google/set-session", {
           accessToken,
