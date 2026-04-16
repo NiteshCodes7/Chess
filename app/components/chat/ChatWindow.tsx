@@ -13,15 +13,16 @@ type Friend = {
 };
 
 type Message = {
-  id?: string;
+  id: string;
   from: string;
-  to?: string;
+  to: string;
   content: string;
   createdAt?: string;
   isMe?: boolean;
 };
 
 type ApiMessage = {
+  id: string;
   senderId: string;
   receiverId: string;
   content: string;
@@ -51,6 +52,7 @@ export default function ChatWindow({
         const res = await api.get(`/chat/${selectedFriend.id}`);
         setMessages(
           res.data.map((msg: ApiMessage) => ({
+            id: msg.id,
             from: msg.senderId,
             to: msg.receiverId,
             content: msg.content,
@@ -74,9 +76,18 @@ export default function ChatWindow({
       ]);
     };
 
+    const handleMessageDeleted = ({ messageId }: { messageId: string }) => {
+       console.log("deleting:", messageId);
+  console.log("messages:", messages.map(m => m.id));
+      setMessages((prev) => prev.filter((m) => m.id !== messageId));
+    };
+
+    socket.on("message_deleted", handleMessageDeleted);
     socket.on("dm", handleDM);
+
     return () => {
       socket.off("dm", handleDM);
+      socket.off("message_deleted", handleMessageDeleted);
     };
   }, [selectedFriend, gameId, socket]);
 
@@ -89,7 +100,9 @@ export default function ChatWindow({
       setMessages((prev) => [
         ...prev,
         {
+          id: crypto.randomUUID(),
           from: msg.from,
+          to: "",
           content: msg.content,
           isMe: msg.from === getUserId(),
         },
@@ -170,6 +183,7 @@ export default function ChatWindow({
             key={msg.id ?? i}
             message={msg}
             isGameChat={isGameChat}
+            onDelete={(id) => setMessages((prev) => prev.filter((m) => m.id !== id))}
           />
         ))}
         <div ref={bottomRef} />
