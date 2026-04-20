@@ -137,7 +137,7 @@ export default function FriendsPage() {
               ),
             },
             {
-              href: "/profile",
+              href: "/auth/profile",
               title: "Profile",
               icon: (
                 <svg
