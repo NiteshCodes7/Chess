@@ -246,4 +246,4 @@ See [deployment guide](#) for full setup including BFF proxy configuration.
 
 ## Related
 
-- [Chessify Backend](../Chessify-Backend/README.md)
+- [Chessify Backend](https://github.com/NiteshCodes7/Chessify_Backend)
