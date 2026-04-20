@@ -58,7 +58,7 @@ A real-time multiplayer chess platform built with Next.js 15, featuring live mat
 ## Architecture
 
 <!-- ARCHITECTURE DIAGRAM: Add your Eraser.io full architecture diagram here -->
-> ![Architecture](./public/assets/architecture.png)
+> ![System Architecture](./public/assets/architecture.png)
 [View Full Architecture on Eraser.io](https://app.eraser.io/workspace/YLQYjAGwqekeW8xuezXB)
 
 ---
@@ -246,4 +246,4 @@ See [deployment guide](#) for full setup including BFF proxy configuration.
 
 ## Related
 
-- [Chessify Backend](../backend/README.md)
+- [Chessify Backend](../Chessify_BackendEADME.md)
